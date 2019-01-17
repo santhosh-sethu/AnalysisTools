@@ -2934,6 +2934,11 @@ Function atListBoxProc(lba) : ListBoxControl
 					
 					dsName = whichDataSet()
 					Wave/T theDataSet = $("root:Packages:analysisTools:DataSets:DS_" + dsName)
+					
+					If(!WaveExists(theDataSet))
+						Wave/T theDataSet = root:Packages:analysisTools:AT_WaveListTable_FullPath
+					EndIf
+					
 					fullPathList = 0
 					
 					selWaveList = ""
