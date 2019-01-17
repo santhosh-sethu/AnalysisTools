@@ -5231,7 +5231,7 @@ Function displayROIs()
 				EndIf
 			EndIf
 			
-			Path = "root:ROI_analysis:ROI" + ROI + ":" + Scan + "_ch2_ROI" + ROI + "_dF"
+			Path = "root:ROI_analysis:ROI" + ROI + ":" + Scan + "_ch1_ROI" + ROI + "_dF"
 			//Path = "root:ROI_analysis:ROI" + ROI + ":" + Scan + "_ratio_ROI" + ROI + "_dGR"
 			
 			If(doAverages)
