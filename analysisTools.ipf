@@ -13,7 +13,8 @@ Function FindExternalModules()
 	String filepath,folders,platform
 	platform = IgorInfo(2)
 	
-	print "did it update?"
+	print "This is my branched version"
+	
 	If(cmpstr(platform,"Windows") == 0)
 		filepath = SpecialDirPath("Igor Application",0,0,0) + "User Procedures\twoPhoton\analysisTools\External Procedures"
 	ElseIf(cmpstr(platform,"Macintosh") == 0)
