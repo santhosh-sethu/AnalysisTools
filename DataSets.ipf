@@ -413,11 +413,15 @@ Function/WAVE getDataSetWave([dsName])
 			return $""
 		EndIf
 		
-		dsName = "root:Packages:analysisTools:DataSets:DS_" + dataSetNames[V_Value]
-		If(WaveExists($dsName))
-			Wave/T theWave = $dsName
-			return theWave
+		If(V_Value == -1)
+			Wave/T theWave = root:Packages:analysisTools:AT_waveListTable_FullPath
+		Else
+			dsName = "root:Packages:analysisTools:DataSets:DS_" + dataSetNames[V_Value]
+			If(WaveExists($dsName))
+				Wave/T theWave = $dsName
+			EndIf
 		EndIf
+		return theWave
 	Else
 		dsName = "root:Packages:analysisTools:DataSets:DS_" + dsName
 		If(WaveExists($dsName))
@@ -485,7 +489,14 @@ Function/S GetDSWaveList([dsName,separator])
 	
 	If(ParamIsDefault(dsName))
 		String dataSetName = whichDataSet()
-		Wave/T ds = getDataSetWave()
+		
+		If(strlen(dataSetName))
+			//valid data set selected
+			Wave/T ds = getDataSetWave()
+		Else
+			//no selection or invalid data set
+			Wave/T ds = root:Packages:analysisTools:AT_WaveListTable_FullPath
+		EndIf
 	Else
 		If(!cmpstr(dsName,"saveDSgrouping"))
 			Wave/T ds = $("root:Packages:analysisTools:DataSets:ogDS_saveDSGrouping")
@@ -651,6 +662,11 @@ Function fillFilterTable()
 	Redimension/N=(currentNumSets,2) dsFilters	
 	ControlInfo/W=analysis_tools dataSetListBox
 	
+	If(V_Value == -1 || V_Value > currentNumSets - 1)
+		//no data set selected or invalid data set
+		return -1
+	EndIf
+	
 	dsFilters[V_Value][0] = dataSetNames[V_Value]
 	dsFilters[V_Value][1] = GetDSFilters()
 
@@ -719,9 +735,13 @@ Function/S filterByGroup(theList,dataSetName)
 		Wave/T ds = root:Packages:analysisTools:AT_WaveListTable_FullPath
 	EndIf
 	
+	theList = GetDSWaveList()
+	
 	//last waveset grouping
-	Wave/T saveDSgrouping = $("root:Packages:analysisTools:DataSets:ogDS_saveDSGrouping")
-	theList = GetDSWaveList(dsName="saveDSgrouping",separator = ",")
+	If(strlen(dataSetName))
+		Wave/T saveDSgrouping = $("root:Packages:analysisTools:DataSets:ogDS_saveDSGrouping")
+		theList = GetDSWaveList(dsName="saveDSgrouping",separator = ",")
+	EndIf
 	
 	String groupList = "prefixGroup;groupGroup;seriesGroup;sweepGroup;traceGroup"
 	Variable i,j,k,numWaves,numTerms
