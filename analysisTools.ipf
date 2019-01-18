@@ -1328,7 +1328,7 @@ Function flipLists(whichList)
 		case "AT":
 			//shrink the window
 			GetWindow analysis_tools wsize
-			MoveWindow/W=analysis_tools V_left,V_top,V_right-75,V_bottom
+			MoveWindow/W=analysis_tools V_left,V_top,V_right-100,V_bottom
 			//change the subwindow guides
 			DefineGuide/W=analysis_tools listboxLeft={FR,-235},listboxBottom={FB,-10}
 			//text box labels
@@ -1360,9 +1360,9 @@ Function flipLists(whichList)
 		case "Browser":
 			//expand the window
 			GetWindow analysis_tools wsize
-			MoveWindow/W=analysis_tools V_left,V_top,V_right+75,V_bottom
+			MoveWindow/W=analysis_tools V_left,V_top,V_right+100,V_bottom
 			//change the subwindow guides
-			DefineGuide/W=analysis_tools listboxLeft={FR,-235-75},listboxBottom={FB,-10}
+			DefineGuide/W=analysis_tools listboxLeft={FR,-235-100},listboxBottom={FB,-10}
 			
 			//kill text box labels
 			DrawAction/W=analysis_tools#scanListPanel delete	
@@ -1383,7 +1383,7 @@ Function flipLists(whichList)
 
 			//Change some control assignments
 			ListBox AT_FolderListBox win=analysis_tools#scanListPanel,size={140,500-65},pos={0,30},mode=4,listWave=folderTable,selWave=selFolderWave,proc=MBr_ListBoxProc,disable=0
-			ListBox AT_ItemListBox win=analysis_tools#scanListPanel,listWave=waveListTable,selWave=selWaveMBr,mode=4,size={80+75,500-65},pos={150,30},proc=MBr_ListBoxProc,disable = 0
+			ListBox AT_ItemListBox win=analysis_tools#scanListPanel,listWave=waveListTable,selWave=selWaveMBr,mode=4,size={80+100,500-65},pos={150,30},proc=MBr_ListBoxProc,disable = 0
 			//ListBox ROIListBox win=analysis_tools#scanListPanel,listWave=waveListTable,selWave=selWaveMBr,size={80+75,500-65},proc=MBr_ListBoxProc
 
 			break
