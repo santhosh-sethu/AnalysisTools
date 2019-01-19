@@ -6,6 +6,10 @@ Function atButtonProc(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
 	SVAR currentCmd = root:Packages:analysisTools:currentCmd
 	SVAR runCmdStr = root:Packages:analysisTools:runCmdStr
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
+	SVAR selectedWave = root:Packages:analysisTools:selectedWave
+	
+	
 	//Parameters
 	NVAR Gnumtrials = root:Packages:analysisTools:Gnumtrials
 	NVAR Gbatchsize = root:Packages:analysisTools:Gbatchsize
@@ -18,7 +22,7 @@ Function atButtonProc(ba) : ButtonControl
 	NVAR Gblue = root:Packages:analysisTools:Gblue
 	NVAR viewerOpen = root:Packages:analysisTools:viewerOpen
 	Variable i
-	
+
 	switch( ba.eventCode )
 		case 2: // mouse up
 			strswitch(ba.ctrlName)
@@ -57,6 +61,14 @@ Function atButtonProc(ba) : ButtonControl
 						RunCmd(runCmdStr)
 					EndIf
 
+					break
+				case "atBrowseBackButton":
+					String parentDF = ParseFilePath(1,cdf,":",1,0)
+					SetDataFolder parentDF
+					cdf = parentDF
+					GetFolderListItems()
+					GetFolderItems()
+					ControlUpdate AT_cdf
 					break
 				case "nudgeROI":
 					NudgeROI()
@@ -202,8 +214,12 @@ End
 
 Function atListBoxProc(lba) : ListBoxControl
 	STRUCT WMListboxAction &lba
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	SVAR scanListStr = root:Packages:twoP:examine:scanListStr
 	SVAR ROIListStr = root:Packages:twoP:examine:ROIListStr
+	SVAR selWaveList = root:Packages:analysisTools:selWaveList
+	
+	SVAR viewerRecall = root:Packages:analysisTools:viewerRecall
 	NVAR viewerOpen = root:Packages:analysisTools:viewerOpen
 	Variable row = lba.row
 	Variable col = lba.col
@@ -211,13 +227,43 @@ Function atListBoxProc(lba) : ListBoxControl
 	WAVE/Z selWave = lba.selWave
 	Variable i,scanNum
 	
+	selWaveList = ""
 	switch( lba.eventCode )
 		case -1: // control being killed
 			break
 		case 1: // mouse down
 			break
+		case 2: // mouse up
+			strswitch(lba.ctrlName)
+				case "AT_ItemListBox":
+					selWaveList = ""
+
+					For(i=0;i<DimSize(listWave,0);i+=1)
+						If(selWave[i] == 1)
+							selWaveList += listWave[i] + ";"
+						EndIf
+					EndFor
+
+					//Add the traces to viewer if its in the analysis tab
+					AppendToViewer(selWaveList)
+					
+					break
+				default:
+					break
+			endswitch
+			break
 		case 3: // double click
 			strswitch(lba.ctrlName)
+				case "AT_FolderListBox":
+					If(row > DimSize(listWave,0)-1)
+						break
+					EndIf
+					cdf = cdf + listWave[row] + ":"
+					SetDataFolder cdf
+					GetFolderListItems()
+					GetFolderItems()
+					ControlUpdate AT_cdf
+					break
 				case "WaveListBox":
 					//populate scanListStr
 					scanListStr = ""
@@ -361,7 +407,7 @@ Function atListBoxProc(lba) : ListBoxControl
 						Variable selection = lba.row
 						Wave/T theDataSet = $("root:Packages:analysisTools:DataSets:DS_"+listWave[selection])
 						Variable numWaves = DimSize(theDataSet,0)
-						String selWaveList = ""
+						selWaveList = ""
 						
 						traceList = TraceNameList("analysis_tools#atViewerGraph",";",1)
 						If(strlen(traceList))
@@ -425,6 +471,19 @@ Function atListBoxProc(lba) : ListBoxControl
 						Wave/T theDataSet = $("root:Packages:analysisTools:DataSets:DS_" + S_Value)
 						
 						AppendDSWaveToViewer(selWave,selWaveList,theDataSet)
+				case "AT_ItemListBox":	
+					selWaveList = ""
+					For(i=0;i<DimSize(listWave,0);i+=1)
+						If(selWave[i] == 1)
+							selWaveList += listWave[i] + ";"
+						EndIf
+					EndFor
+					
+					AppendToViewer(selWaveList)
+										
+					//Set to null if a selection has changed.
+					viewerRecall = ""
+					break
 				endswitch
 		case 5: // cell selection plus shift key
 			strswitch(lba.ctrlName)
@@ -501,6 +560,19 @@ Function atListBoxProc(lba) : ListBoxControl
 					EndFor			
 					
 					AppendDSWaveToViewer(selWave,selWaveList,theDataSet,fullPathList=fullPathList)
+					break
+				case "AT_ItemListBox":	
+					selWaveList = ""
+					For(i=0;i<DimSize(listWave,0);i+=1)
+						If(selWave[i] == 1)
+							selWaveList += listWave[i] + ";"
+						EndIf
+					EndFor
+					
+					AppendToViewer(selWaveList)
+										
+					//Set to null if a selection has changed.
+					viewerRecall = ""
 					break
 			endswitch
 		case 6: // begin edit
@@ -809,38 +881,17 @@ Function atSetVarProc(sva) : SetVariableControl
 					getWaveMatchList()
 					fillFilterTable()
 					updateWSDimText()
+					
 					break
 				case "waveNotMatch":
 					SVAR waveNotMatchStr = root:Packages:analysisTools:waveNotMatchStr
 					waveNotMatchStr = sval
 					getWaveMatchList()
 					fillFilterTable()
-					updateWSDimText()
+					updateWSDimText()				
+				
 					break
-				case "waveGrouping":
-				//	String theList = GetDSWaveList()
-				//	String dataSetName= whichDataSet()
-				//	Wave/T ds = $("root:Packages:analysisTools:DataSets:DS_" + dataSetName)
-					
-				//	Wave/T theWaveList = root:Packages:analysisTools:DataSets:AT_WaveListTable
-					
-					
-					//sort remaingin waves by by grouping	
-				//	setWaveGrouping(theList,sval,dataSetName)
-					
-					//check for additional filters
-				//	filterByGroup(theList,dataSetName)
-					
-					//make sure wave sets are all valid dimensions
-				//	checkWaveSets(dataSetName)
-					
-					//fill out the table that remembers the filtering settings of each data set
-				//	fillFilterTable()
-					
-					//update the list box and wave counters
-				//	updateWaveListBox()
-				//	updateWSDimText()
-			
+				case "waveGrouping":			
 					String dataSetName= whichDataSet()
 					String theList = GetDSWaveList()
 					setWaveGrouping(theList,dataSetName)
@@ -869,9 +920,13 @@ Function atSetVarProc(sva) : SetVariableControl
 					Wave/T ds = $("root:Packages:analysisTools:DataSets:DS_" + dataSetName)
 					
 					If(!WaveExists(ds))
+						//run match lists, and redo the group filtering
+						getWaveMatchList()
+						fillFilterTable()
+						updateWSDimText()
 						Wave/T ds = root:Packages:analysisTools:AT_WaveListTable_FullPath
 					EndIf
-					
+					Wave/T items = root:Packages:analysisTools:AT_WaveListTable_FullPath
 				//	setWaveGrouping(theList,dataSetName)
 					
 					//check for additional filters
@@ -886,7 +941,7 @@ Function atSetVarProc(sva) : SetVariableControl
 					//update the list box and wave counters
 					updateWaveListBox()
 					updateWSDimText()
-					
+							
 					//Save the wave grouping so I can undo any prefix/group/series/etc adjustments
 				//	Make/O/T/N=(DimSize(ds,0)) $("root:Packages:analysisTools:DataSets:ogDS_saveDSGrouping")
 				//	Wave/T saveDSgrouping = $("root:Packages:analysisTools:DataSets:ogDS_saveDSGrouping")

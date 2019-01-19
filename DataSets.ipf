@@ -118,7 +118,7 @@ Function addDataSet(dataSetName,[selection])
 	
 	Wave/T dsFilters = root:Packages:analysisTools:DataSets:dsFilters
 	
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	String possiblePath
 		
 	If(selection)
@@ -140,7 +140,7 @@ Function addDataSet(dataSetName,[selection])
 		//Get the full paths of the waves in listwave
 		SVAR whichList = root:Packages:analysisTools:whichList
 		SVAR scanListStr = root:Packages:twoP:examine:scanListStr
-		Wave/T folderTable = root:Packages:MBr:folderTable
+		Wave/T folderTable = root:Packages:analysisTools:folderTable
 		
 		Wave selFolderWave = root:Packages:analysisTools:selFolderWave
 		Variable count = 0 
@@ -736,7 +736,7 @@ Function/S filterByGroup(theList,dataSetName)
 	EndIf
 	
 	theList = GetDSWaveList()
-	
+
 	//last waveset grouping
 	If(strlen(dataSetName))
 		Wave/T saveDSgrouping = $("root:Packages:analysisTools:DataSets:ogDS_saveDSGrouping")
@@ -758,11 +758,14 @@ Function/S filterByGroup(theList,dataSetName)
 		EndIf
 	EndFor
 	
-	//break if no terms are present
-	If(termCount == 0)
-		//Input the new list into the data set wave
-		Redimension/N=(DimSize(saveDSgrouping,0)) ds
-		ds = saveDSgrouping
+	//break if no terms are present but a data sets was selected
+	If(termCount == 0 && strlen(dataSetName))
+		//Input the new list into the data set wave	
+		Wave/T saveDSgrouping = $("root:Packages:analysisTools:DataSets:ogDS_saveDSGrouping")
+		If(WaveExists(saveDSgrouping))
+			Redimension/N=(DimSize(saveDSgrouping,0)) ds
+			ds = saveDSgrouping
+		EndIf
 		return ""
 	EndIf
 		

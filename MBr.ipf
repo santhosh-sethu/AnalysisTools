@@ -65,8 +65,8 @@ Function LoadMBr_Items()
 	
 	String/G recoveryWaveStr = "root:Packages:MBr:recoveryWave"
 	
-	String/G root:Packages:MBr:currentDataFolder
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	String/G root:Packages:analysisTools:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 
 	Variable/G root:Packages:MBr:selFolder
 	NVAR selFolder= root:Packages:MBr:selFolder
@@ -198,8 +198,8 @@ Function MBr_BuildControls()
 	
 	String/G recoveryWaveStr = "root:Packages:MBr:recoveryWave"
 	
-	String/G root:Packages:MBr:currentDataFolder
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	String/G root:Packages:analysisTools:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 
 	Variable/G root:Packages:MBr:selFolder
 	NVAR selFolder= root:Packages:MBr:selFolder
@@ -319,7 +319,7 @@ Function MBr_BuildControls()
 	ListBox MBr_FolderListBox win=MBr,pos={5,40},size={150,355},frame=0,fsize=10,mode=2,listWave=folderTable,selRow=selFolder,proc=MBr_ListBoxProc
 	
 	//Item list box
-	Wave/T waveListTable = MBr_GetFolderItems()
+	Wave/T waveListTable = GetFolderItems()
 	ListBox MBr_ItemListBox win=MBr,pos={165,40},size={175,355},frame=0,fsize=10,focusRing=0,mode=4,listWave=waveListTable,selWave=selWave,proc=MBr_ListBoxProc
 	
 	//Navigation controls
@@ -374,7 +374,7 @@ Function MBr_BuildControls()
 	ListBox MBr_WaveClipboardListBox win=MBr#ClipboardPanel,pos={6,46},size={90,105},frame=0,listWave=root:Packages:MBr:clipboardListWave,mode=0
 	
 	//Set window hooks
-	SetWindow MBr,hook(resizeHook) = MBr_ResizeHook
+	//SetWindow MBr,hook(resizeHook) = MBr_ResizeHook
 End
 
 Function MBr_ResizeHook(s)
@@ -405,7 +405,7 @@ Function/S GetCmdStr()
 	Variable i,listItem
 	SVAR selectedWave = root:Packages:MBr:selectedWave
 	SVAR selWaveList = root:Packages:MBr:selWaveList
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	SVAR outWaveStr = root:Packages:MBr:outWaveStr
 	SVAR errorStr = root:Packages:MBr:errorStr
 	String tempWaveStr
@@ -568,7 +568,7 @@ End
 
 Function MBr_ButtonProc(ba) : ButtonControl
 	STRUCT WMButtonAction &ba
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	NVAR viewerOpen = root:Packages:MBr:viewerOpen
 	SVAR selectedWave = root:Packages:MBr:selectedWave
 	Wave theWave = $selectedWave
@@ -596,7 +596,7 @@ Function MBr_ButtonProc(ba) : ButtonControl
 					SetDataFolder parentDF
 					cdf = parentDF
 					MBr_GetFolderListItems()
-					MBr_GetFolderItems()
+					GetFolderItems()
 					ControlUpdate MBr_cdf
 					break
 				case "MBr_DeleteWave":
@@ -624,7 +624,7 @@ Function MBr_ButtonProc(ba) : ButtonControl
 					EndIf
 					KillWaves/Z $selectedWave
 					MBr_GetFolderListItems()
-					MBr_GetFolderItems()
+					GetFolderItems()
 				
 					
 					break
@@ -736,7 +736,7 @@ Function MBr_ButtonProc(ba) : ButtonControl
 			endswitch
 			//Update folder and item lists
 			MBr_GetFolderListItems()
-			MBr_GetFolderItems()
+			GetFolderItems()
 			
 			break
 		case -1: // control being killed
@@ -978,11 +978,11 @@ Function MBr_SetVariableProc(sva) : SetVariableControl
 			strswitch(sva.ctrlName)
 				case "AT_match":
 				case "MBr_match":
-					MBr_GetFolderItems()
+					GetFolderItems()
 					break
 				case "AT_notMatch":
 				case "MBr_notMatch":
-					MBr_GetFolderItems()
+					GetFolderItems()
 					break
 				case "waveMatch":
 					getWaveMatchList()
@@ -1212,7 +1212,7 @@ Function MBr_SliceHook(s)
 	SVAR selectedWave = root:Packages:MBr:selectedWave
 	NVAR beamRadius = root:Packages:MBr:beamRadius
 	NVAR timeRef = root:Packages:MBr:timeRef
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	NVAR MBr_Value = root:Packages:MBr:MBr_Value
 	
 	If(WaveExists($selectedWave))
@@ -1331,7 +1331,7 @@ End
 Function/WAVE MBr_GetFolderItems()
 	Wave/T waveListTable = root:Packages:MBr:waveListTable
 	Wave selWave = root:Packages:MBr:selWave
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	SVAR matchStr = root:Packages:MBr:matchStr
 	SVAR notMatchStr = root:Packages:MBr:notMatchStr
 	String itemList
@@ -1369,7 +1369,7 @@ Function/WAVE MBr_GetFolderListItems()
 	EndIf
 	Wave/T folderTable = root:Packages:MBr:folderTable
 	
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	Variable i
 	
 	//Indexes waves in current data folder, applies match string
@@ -1461,7 +1461,7 @@ Function MBr_ListBoxProc(lba) : ListBoxControl
 	WAVE/T/Z listWave = lba.listWave
 	WAVE/Z selWave = lba.selWave
 	SVAR selWaveList = root:Packages:MBr:selWaveList
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	NVAR timeRef = root:Packages:MBr:timeRef
 	NVAR mouseDown = root:Packages:MBr:mouseDown
 	NVAR selectedRow = root:Packages:MBr:selectedRow
@@ -1536,6 +1536,7 @@ Function MBr_ListBoxProc(lba) : ListBoxControl
 			
 				If(cmpstr(lba.ctrlName,"MBr_ItemListBox") == 0 || cmpstr(lba.ctrlName,"AT_ItemListBox") == 0)
 					selWaveList = ""
+					print "mouse up 1"
 					For(i=0;i<DimSize(listWave,0);i+=1)
 						If(selWave[i] == 1)
 							selWaveList += listWave[i] + ";"
@@ -1567,7 +1568,7 @@ Function MBr_ListBoxProc(lba) : ListBoxControl
 				cdf = cdf + listWave[row] + ":"
 				SetDataFolder cdf
 				MBr_GetFolderListItems()
-				MBr_GetFolderItems()
+				GetFolderItems()
 				ControlUpdate MBr_cdf
 				//Update command string in case the popup menu hasn't actually been clicked prior to running a command
 				cmdStr = GetCmdStr()
@@ -1703,7 +1704,7 @@ Function ConcatCols(selectedWave)
 	String selectedWave
 	Wave theWave = $selectedWave
 	SVAR outWaveStr = root:Packages:MBr:outWaveStr
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	Variable startCol,endCol,i
 	//Which columns?
 	SVAR pColumnRange = root:Packages:MBr:pColumnRange
@@ -1743,7 +1744,7 @@ Function ExtractColumns(selectedWave)
 	String selectedWave
 	Wave theWave = $selectedWave
 	SVAR outWaveStr = root:Packages:MBr:outWaveStr
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	Variable startCol,endCol,i
 	//Which columns?
 	SVAR pColumnRange = root:Packages:MBr:pColumnRange
@@ -1778,7 +1779,7 @@ Function ExtractRows(selectedWave)
 	String selectedWave
 	Wave theWave = $selectedWave
 	SVAR outWaveStr = root:Packages:MBr:outWaveStr
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	Variable startRow,endRow,i
 	//Which columns?
 	SVAR pRowRange = root:Packages:MBr:pRowRange

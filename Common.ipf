@@ -1614,10 +1614,10 @@ End
 
 //Gets full path of the selected items in the ItemListBox
 Function/S getSelectedItems()
-	SVAR selWaveList = root:Packages:MBr:selWaveList
-	SVAR cdf = root:Packages:MBr:currentDataFolder
-	WAVE/T/Z listWave = root:Packages:MBr:waveListTable
-	WAVE/Z selWave = root:Packages:MBr:selWave
+	SVAR selWaveList = root:Packages:analysisTools:selWaveList
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
+	WAVE/T/Z listWave = root:Packages:analysisTools:waveListTable
+	WAVE/Z selWave = root:Packages:analysisTools:selWave
 	Variable i
 	
 	selWaveList = ""
@@ -1699,9 +1699,9 @@ Function AppendDSWaveToViewer(selWave,itemList,dsWave,[fullPathList])
 	EndIf
 	
 	
-	Wave/Z/T folderTable = root:Packages:MBr:folderTable
+	Wave/Z/T folderTable = root:Packages:analysisTools:folderTable
 	Wave selFolderWave = root:Packages:analysisTools:selFolderWave
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	String fullPath = ""
 	Variable count = 0
 	//If length of dsWave and selWave don't match, assume it need
@@ -2246,7 +2246,7 @@ Function/WAVE getWaveMatchList()
 	String itemList = ""
 	String masterItemList = ""
 	String currentFolder,folder
-	SVAR MBr_cdf = root:Packages:MBr:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	
 	Wave/T waveListTable = root:Packages:analysisTools:AT_waveListTable
 	Wave selWave = root:Packages:analysisTools:AT_selWave
@@ -2260,7 +2260,7 @@ Function/WAVE getWaveMatchList()
 	
 	//If we're in browser mode
 	SVAR whichList = root:Packages:analysisTools:whichList
-	Wave/T folderTable = root:Packages:MBr:folderTable
+	Wave/T folderTable = root:Packages:analysisTools:folderTable
 	Wave selFolderWave = root:Packages:analysisTools:selFolderWave
 	
 	//Find out the selected folders if we're in Browser mode
@@ -2269,7 +2269,7 @@ Function/WAVE getWaveMatchList()
 		String folderList = ""
 		For(i=0;i<DimSize(folderTable,0);i+=1)
 			If(selFolderWave[i] == 1)
-				folderList +=  MBr_cdf + folderTable[i] + ";"
+				folderList +=  cdf + folderTable[i] + ";"
 			EndIf
 		EndFor
 		items = ItemsInList(folderList,";")
@@ -2287,7 +2287,7 @@ Function/WAVE getWaveMatchList()
 	For(i=0;i<items;i+=1)
 		If(browsing)
 			If(!strlen(folderList))
-				folder = MBr_cdf
+				folder = cdf
 			Else
 				folder = StringFromList(i,folderList,";") + ":"
 			EndIf
@@ -3349,11 +3349,23 @@ Function deleteGridROI(ROIListWave,ROIListSelWave)
 	Variable i,size
 	size = DimSize(ROIListWave,0)
 	
+	SetDataFolder root:twoP_ROIS
+	String objectList = StringByKey("WAVES",DataFolderDir(2),":")
+	String roiList = ""
+	roiList = ListMatch(objectList,"grid*_x",",")
+	roiList += ListMatch(objectList,"grid*_y",",")
+	
 	For(i=size-1;i>-1;i-=1)	//count down
 		If(StringMatch(ROIListWave[i],"grid*"))
 			DeletePoints/M=0 i,1,ROIListWave,ROIListSelWave
 		EndIf
 	EndFor
+	
+	For(i=0;i<ItemsInList(objectList,",");i+=1)
+		Wave theROI = $("root:twoP_ROIS:" + StringFromList(i,roiList,","))
+		KillWaves/Z theROI
+	EndFor
+	
 End
 
 Function FilterROI_Table(roiTable,threshold,matchStr)
@@ -3672,7 +3684,7 @@ End
 
 Function AppendToViewer(itemList)
 	String itemList
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	Variable i,j,type
 
 	DoWindow/W=analysis_tools#atViewerGraph atViewerGraph

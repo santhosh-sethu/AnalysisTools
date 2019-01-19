@@ -46,10 +46,63 @@ Function displayExtFuncHelp(theFunction)
 	print "----------------------------"
 End
 
+Function/WAVE GetFolderListItems()
+	Wave/Z/T folderTable = root:Packages:analysisTools:folderTable
 
+	Wave/T selFolderWave = root:Packages:analysisTools:selFolderWave
+	If(!WaveExists(folderTable))
+		Make/O/T/N=(DimSize(selFolderWave,0)) root:Packages:analysisTools:folderTable
+	EndIf
+	Wave/T folderTable = root:Packages:analysisTools:folderTable
+	
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
+	Variable i
+	
+	//Indexes waves in current data folder, applies match string
+	cdf = GetDataFolder(1)
+	String folderList = ReplaceString(";",StringFromList(1,DataFolderDir(1),":"),"")
+	folderList = TrimString(folderList)
 
+	Redimension/N=(ItemsInList(folderList,",")) folderTable,selFolderWave
+	
+	//Fills out folder table for the list box
+	For(i=0;i<ItemsInList(folderList,",");i+=1)
+		folderTable[i] = StringFromList(i,folderList,",")
+	EndFor
+	return folderTable
+End
 
-
+Function/WAVE GetFolderItems()
+	Wave/T waveListTable = root:Packages:analysisTools:itemListTable
+	Wave selWave = root:Packages:analysisTools:itemListSelWave
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
+	SVAR waveMatchStr = root:Packages:analysisTools:waveMatchStr
+	SVAR waveNotMatchStr = root:Packages:analysisTools:waveNotMatchStr
+	String itemList
+	Variable i
+	
+	//Checks if match string has value
+	If(!strlen(waveMatchStr))
+		waveMatchStr = "*"
+	EndIf
+	
+	//Match list
+	itemList = ReplaceString(";",StringFromList(1,DataFolderDir(2),":"),"")
+	itemList = TrimString(itemList)
+	itemList = ListMatch(itemList,waveMatchStr,",")
+	
+	//Not match list
+	If(strlen(waveNotMatchStr))
+		itemList = ListMatch(itemList,"!*" + waveNotMatchStr,",")
+	EndIf
+	
+	Redimension/N=(ItemsInList(itemList,",")) waveListTable,selWave
+	
+	For(i=0;i<ItemsInList(itemList,",");i+=1)
+		waveListTable[i] = StringFromList(i,itemList,",")
+	EndFor
+	return waveListTable
+End
 
 //Flips the list boxes between showing scanlistbox and ROI listbox to the full data browser folder/item list boxes
 Function flipLists(whichList)
@@ -60,7 +113,7 @@ Function flipLists(whichList)
 	SVAR notMatchStr = root:Packages:MBr:notMatchStr
 
 	//current data folder string
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	
 	//Waves for the scan and ROI tables
 	wave/T ROIListWave = root:packages:twoP:examine:ROIListWave
@@ -69,18 +122,22 @@ Function flipLists(whichList)
 	Wave selWave = root:Packages:twoP:examine:selWave
 	
 	//Waves for the folder and item tables
-	Wave/T folderTable = MBr_GetFolderListItems()
+	Wave/T folderTable = GetFolderListItems()
 	
 	If(!WaveExists(root:Packages:analysisTools:selFolderWave))
 		Make/O/N=(DimSize(folderTable,0)) root:Packages:analysisTools:selFolderWave
 	EndIf
 	Wave/T selFolderWave = root:Packages:analysisTools:selFolderWave
 	
-	NVAR selFolder= root:Packages:MBr:selFolder
+	NVAR selFolder= root:Packages:analysisTools:selFolder
 	selFolder = 0
 	
-	Wave selWaveMBr = root:Packages:MBr:selWave
-	Wave/T waveListTable = MBr_GetFolderItems()
+
+	Wave/T waveListTable = GetFolderItems()
+	If(!WaveExists(root:Packages:analysisTools:itemListSelWave))
+		Make/O/N=(DimSize(waveListTable,0)) root:Packages:analysisTools:itemListSelWave
+	EndIf
+	Wave itemListSelWave = root:Packages:analysisTools:itemListSelWave
 
 	//Change between the scan list box and the folder list box
 	strswitch(whichList)
@@ -98,8 +155,8 @@ Function flipLists(whichList)
 			//Hide some controls
 			Button atBrowseBackButton win=analysis_tools#scanListPanel,disable=1
 			SetVariable AT_cdf win=analysis_tools#scanListPanel,disable=1
-			ListBox AT_FolderListBox win=analysis_tools#scanListPanel,size={140,500-65},pos={0,30},mode=4,listWave=folderTable,selWave=selFolderWave,proc=MBr_ListBoxProc,disable=1
-			ListBox AT_ItemListBox win=analysis_tools#scanListPanel,listWave=waveListTable,selWave=selWaveMBr,mode=4,size={80+75,500-65},proc=MBr_ListBoxProc,disable = 1
+			ListBox AT_FolderListBox win=analysis_tools#scanListPanel,size={140,500-65},pos={0,30},mode=4,listWave=folderTable,selWave=selFolderWave,proc=atListBoxProc,disable=1
+			ListBox AT_ItemListBox win=analysis_tools#scanListPanel,listWave=waveListTable,selWave=itemListSelWave,mode=4,size={80+75,500-65},proc=atListBoxProc,disable = 1
 			
 			//Move the ROI list box back
 			ListBox ROIListBox win=analysis_tools#scanListPanel,pos={150,30}
@@ -141,8 +198,8 @@ Function flipLists(whichList)
 			Button atBrowseBackButton win=analysis_tools#scanListPanel,disable=0
 
 			//Change some control assignments
-			ListBox AT_FolderListBox win=analysis_tools#scanListPanel,size={140,500-65},pos={0,30},mode=4,listWave=folderTable,selWave=selFolderWave,proc=MBr_ListBoxProc,disable=0
-			ListBox AT_ItemListBox win=analysis_tools#scanListPanel,listWave=waveListTable,selWave=selWaveMBr,mode=4,size={80+100,500-65},pos={150,30},proc=MBr_ListBoxProc,disable = 0
+			ListBox AT_FolderListBox win=analysis_tools#scanListPanel,size={140,500-65},pos={0,30},mode=4,listWave=folderTable,selWave=selFolderWave,proc=atListBoxProc,disable=0
+			ListBox AT_ItemListBox win=analysis_tools#scanListPanel,listWave=waveListTable,selWave=itemListSelWave,mode=4,size={80+100,500-65},pos={150,30},proc=atListBoxProc,disable = 0
 			//ListBox ROIListBox win=analysis_tools#scanListPanel,listWave=waveListTable,selWave=selWaveMBr,size={80+75,500-65},proc=MBr_ListBoxProc
 
 			break
@@ -1017,7 +1074,7 @@ Function GetROI()
 	//scan or browser mode?
 	SVAR whichList = root:Packages:analysisTools:whichList
 	SVAR selWaveList = root:Packages:MBr:selWaveList
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	
 	Variable numROIs,numScans,numFrames,doRatio,darkVal,darkVal2,bslnStart,bslnEnd,bsln,bsln2
 	Variable TempFilter,smoothSize,getPeaks,pkStart,pkEnd,pkWindow,i,j,k,m,activePixels,activePixelThresh,darkSubtract
@@ -1548,7 +1605,7 @@ Function avgROIWaves(ROIListStr,scanListStr,channel,scanSize)
 		
 		If(cmpstr(channel,"ratio") == 0)
 			//dGR
-			avgDFName = "root:ROI_analysis:ROI" + theROI + ":" + baseName + "_" + channel + "_ROI" + theROI + "_dGR_avg"
+			avgDFName = "root:ROI_analysis:ROI" + theROI + ":" + baseName + "_1" + "_ROI" + theROI + "_dGR_avg"
 		Else
 			//dF
 			avgDFName = "root:ROI_analysis:ROI" + theROI + ":" + baseName + "_" + channel + "_ROI" + theROI + "_dF_avg"
@@ -1560,7 +1617,7 @@ Function avgROIWaves(ROIListStr,scanListStr,channel,scanSize)
 		For(j=0;j<numScans;j+=1)
 			theScan = StringFromList(j,ScanListStr,";")
 			If(cmpstr(channel,"ratio") == 0)
-				theROIName = "root:ROI_analysis:ROI" + theROI + ":" + theScan + "_" + channel + "_ROI" + theROI + "_dGR"
+				theROIName = "root:ROI_analysis:ROI" + theROI + ":" + theScan + "_1" + "_ROI" + theROI + "_dGR"
 			Else
 				//dF
 				theROIName = "root:ROI_analysis:ROI" + theROI + ":" + theScan + "_" + channel + "_ROI" + theROI + "_dF"
@@ -2099,7 +2156,7 @@ Function gridROI()//theMask,size)
 		Do	
 			buffer = theMask[p + i][q + j]	//extract the square of data points
 			avg = mean(buffer)	//avg is greater than 0 if it contains a non-masked point
-			
+		
 			If(avg >= thresholdPct)	//% of pixels have values
 				grid_ROIMask[gridX][gridY] = 1
 				
@@ -2621,7 +2678,7 @@ Function/WAVE getDendriticMask([theWave,noBuffer])
 
 	SVAR scanListStr = root:Packages:twoP:examine:scanListStr
 	SVAR selWaveList = root:Packages:MBr:selWaveList
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	SVAR whichList = root:Packages:analysisTools:whichList
 	Variable m,k,f,numScans,numChannels
 	
@@ -2909,7 +2966,7 @@ End
 Function dfMapSimple()
 	SVAR scanListStr = root:Packages:twoP:examine:scanListStr
 	SVAR whichList = root:Packages:analysisTools:whichList
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	SVAR selWaveList = root:Packages:MBr:selWaveList
 	
 	Variable numChannels,i,j,k,m,b,c,frames,rows,cols
@@ -3603,7 +3660,7 @@ Function doOperation()
 	SVAR scanListStr = root:Packages:twoP:examine:scanListStr
 	SVAR selWaveList = root:Packages:MBr:selWaveList
 	SVAR whichList = root:Packages:analysisTools:whichList
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	
 	Variable numWaves = DimSize(waveListTable,0)
 	Variable i
@@ -5685,12 +5742,12 @@ Function ErrorWaves()
 	outWave = 0
 	
 	//Compute average first
-	Make/FREE/N=(DimSize(outWave,0)) tempAvg
+	Make/FREE/N=(DimSize(outWave,0)) tempAvg = 0
 	For(i=0;i<numWaves;i+=1)
 		Wave theWave = $StringFromList(i,theWaveList,";")
 		tempAvg += theWave
 	EndFor
-	outWave /= numWaves
+	tempAvg /= numWaves
 	SetScale/P x,DimOffset(theWave,0),DimDelta(theWave,0),outWave
 	
 	//SEM calculation

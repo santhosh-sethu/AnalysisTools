@@ -11,13 +11,6 @@ Function FindExternalModules()
 	String filepath,folders,platform
 	platform = IgorInfo(2)
 	
-	print "did it update?"
-	If(cmpstr(platform,"Windows") == 0)
-		filepath = SpecialDirPath("Igor Application",0,0,0) + "User Procedures\twoPhoton\analysisTools\External Procedures"
-	ElseIf(cmpstr(platform,"Macintosh") == 0)
-		filepath = SpecialDirPath("Igor Application",0,0,0) + "User Procedures:twoPhoton:analysisTools:External Procedures"
-	EndIf
-	
 	//What folder is the analysisTools.ipf in?
 	filepath = FunctionPath("FindExternalModules")
 	If(cmpstr(platform,"Windows") == 0)
@@ -176,16 +169,6 @@ Function LoadAnalysisSuite([left,top])
 	
 	
 	cmdList = "Data Sets;External Function;---------------;Load PClamp;---------------;Average;Error;Kill Waves;----Packages----;Calcium Imaging"
-	//cmdList += "-------ROIs--------;"
-	//cmdList += "MultiROI;ROI From Map;ROI Grid;Display ROIs;"//ROI Segmenter;ROI Tuning Curve;"
-	//cmdList += "-------Maps-------;"
-	//cmdList += "df Map;Vector Sum Map;"//Space-Time dF;"
-	//cmdList += "------Masks-------;"
-	//cmdList += "Get Dendritic Mask;Mask Scan Data;"
-	//cmdList += "----Registration---;"
-	//cmdList += "Adjust Galvo Distortion;Register Image;Rescale Scans;"
-	//cmdList += "----Functions----;"
-	//cmdList += "Get Peaks;Get Peak Times;Line Profile"
 
 	SVAR currentCmd = root:Packages:analysisTools:currentCmd
 	currentCmd = StringFromList(0,cmdList,";")
@@ -215,10 +198,6 @@ Function LoadAnalysisSuite([left,top])
 	String/G root:Packages:analysisTools:runCmdStr
 	SVAR runCmdStr = root:Packages:analysisTools:runCmdStr
 	runCmdStr = ""
-	
-	String/G root:Packages:analysisTools:MBr_WindowSettings
-	SVAR MBr_WindowSettings = root:Packages:analysisTools:MBr_WindowSettings
-	MBr_WindowSettings = ""
 	
 	//For external functions
 	String/G root:Packages:analysisTools:extFuncList
@@ -318,15 +297,7 @@ Function LoadAnalysisSuite([left,top])
 		//575-235 = width -235
 		TabControl atTabMBr win=MBr,tabLabel(i) = StringFromList(i,tabList,";"),size={575-235,20}
 	EndFor
-	MBr_BuildControls()
-	DoWindow MBr
-	If(V_flag)
-		GetWindow MBr wsize
-		MBr_WindowSettings = "Width:" + num2str(V_right - V_left) + ";Height:" + num2str(V_bottom - V_top)
-	EndIf
-	//MBr_WindowSettings = "Width:" + num2str(V_right - V_left) + ";Height:" + num2str(V_bottom - V_top)
-
-	SVAR cdf = root:Packages:MBr:currentDataFolder
+	//MBr_BuildControls()
 	
 	
 	Make/O/N=(ItemsInList(tabList,";")) root:Packages:analysisTools:controlHeight
@@ -349,6 +320,17 @@ Function LoadAnalysisSuite([left,top])
 		TabControl atTab win=analysis_tools,tabLabel(i) = StringFromList(i,tabList,";"),size={width-235,20}
 	EndFor
 	
+	String/G root:Packages:analysisTools:selWaveList
+	SVAR selWaveList = root:Packages:analysisTools:selWaveList
+	selWaveList = ""
+	
+	Make/O/T/N=1 root:Packages:analysisTools:folderTable
+	Variable/G root:Packages:analysisTools:selFolder
+	NVAR selFolder= root:Packages:analysisTools:selFolder
+	selFolder = 0
+	
+	Make/O/N=1 root:Packages:analysisTools:itemListSelWave
+	Make/O/T/N=1 root:Packages:analysisTools:itemListTable
 	// ADD functions..
 	
 	//Scan list panel
@@ -362,9 +344,9 @@ Function LoadAnalysisSuite([left,top])
 	Button nudgeROI win=analysis_tools#scanListPanel,size={60,20},pos={160,height-40},title="Nudge",proc=atButtonProc
 	
 	//Extra list box for folders, so I can switch between browsing and scan list
-	ListBox AT_FolderListBox win=analysis_tools#scanListPanel,size={140,500-65},pos={0,30},mode=2,disable=1
+	ListBox AT_FolderListBox win=analysis_tools#scanListPanel,size={140,500-65},pos={0,30},mode=2,disable=1,proc=atListBoxProc
 	Button atBrowseButton win=analysis_tools#scanListPanel,size={40,20},pos={5,5},fsize=8,title="Browse",proc=atButtonProc
-	Button atBrowseBackButton win=analysis_tools#scanListPanel,size={40,20},pos={50,5},fsize=8,title="Back",proc=MBr_ButtonProc,disable=1
+	Button atBrowseBackButton win=analysis_tools#scanListPanel,size={40,20},pos={50,5},fsize=8,title="Back",proc=atButtonProc,disable=1
 	
 	SetDrawEnv/W=analysis_tools#scanListPanel textxjust=1
 	DrawText/W=analysis_tools#scanListPanel 75,25,"Scans"
@@ -378,7 +360,9 @@ Function LoadAnalysisSuite([left,top])
 	String/G root:Packages:analysisTools:viewerRecall = ""
 	
 	//current data folder text
-
+	String/G root:Packages:analysisTools:currentDataFolder
+	SVAR cdf = root:Packages:analysisTools:currentDataFolder
+	cdf = GetDataFolder(1)
 	SetVariable AT_cdf win=analysis_tools#scanListPanel,pos={100,8},size={200,20},fsize=10,value=cdf,title=" ",disable=1,frame=0
 	
 	PopUpMenu AT_CommandPop win=analysis_tools,pos={80,35},size={125,20},fsize=12, title="Command:",bodywidth=125,value=#"root:Packages:analysisTools:cmdList",mode=1,proc=atPopProc
@@ -578,7 +562,7 @@ Function LoadAnalysisSuite([left,top])
 	ChangeControls("Data Sets","MultiROI")
 	
 	DoWindow/F analysis_tools
-	
+	cdf = GetDataFolder(1)
 End
 
 //Assigns control variables to functions from the 'Command' pop up menu
