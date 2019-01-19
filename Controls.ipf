@@ -919,15 +919,23 @@ Function atSetVarProc(sva) : SetVariableControl
 					
 					Wave/T ds = $("root:Packages:analysisTools:DataSets:DS_" + dataSetName)
 					
-					If(!WaveExists(ds))
+					If(!WaveExists(ds) && cmpstr(sva.ctrlName,"waveGrouping"))			
 						//run match lists, and redo the group filtering
 						getWaveMatchList()
 						fillFilterTable()
 						updateWSDimText()
 						Wave/T ds = root:Packages:analysisTools:AT_WaveListTable_FullPath
+						
+						//Save the wave list table prior to grouping again, ensures its correct
+						Duplicate/T/O ds,root:Packages:analysisTools:DataSets:ogAT_WaveListTable_FullPath
+						Wave/T/Z ogAT_WaveListTable_FullPath = root:Packages:analysisTools:DataSets:ogAT_WaveListTable_FullPath
+						ogAT_WaveListTable_FullPath = ds
+						
+						
+						setWaveGrouping(theList,dataSetName)
+							
 					EndIf
-					Wave/T items = root:Packages:analysisTools:AT_WaveListTable_FullPath
-				//	setWaveGrouping(theList,dataSetName)
+					
 					
 					//check for additional filters
 					filterByGroup(theList,dataSetName)

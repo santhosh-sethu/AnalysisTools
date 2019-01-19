@@ -322,7 +322,12 @@ Function updateWSDimText()
 		return 0
 	EndIf
 	
-	dims = GetWaveSetDims(listWave[selection])
+	If(selection == -1)
+		dims = GetWaveSetDims("")
+	Else
+		dims = GetWaveSetDims(listWave[selection])
+	EndIf
+	
 	numWaves = 0
 	For(i=0;i<ItemsInList(dims,";");i+=1)
 		numWaves += str2num(StringFromList(i,dims,";"))
@@ -495,6 +500,7 @@ Function/S GetDSWaveList([dsName,separator])
 			Wave/T ds = getDataSetWave()
 		Else
 			//no selection or invalid data set
+			
 			Wave/T ds = root:Packages:analysisTools:AT_WaveListTable_FullPath
 		EndIf
 	Else
