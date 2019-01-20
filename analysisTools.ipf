@@ -5783,9 +5783,23 @@ Function AT_KillWaves()
 	String theWaveList = getWaveNames()
 	Variable numWaves = ItemsInList(theWaveList,";")
 	Variable i
+	String df = GetDataFolder(1)
 	
 	For(i=0;i<numWaves;i+=1)
-		KillWaves/Z $StringFromList(i,theWaveList,";")
+		Wave/Z theWave = $StringFromList(i,theWaveList,";")
+		If(!WaveExists(theWave))
+			Wave/Z/T theTextWave = $StringFromList(i,theWaveList,";")
+			If(!WaveExists(theTextWave))
+				continue
+			Else
+				SetDataFolder GetWavesDataFolder(theWave,1)
+				KillWaves/Z theTextWave
+			EndIf
+		Else
+			SetDataFolder GetWavesDataFolder(theWave,1)
+			KillWaves/Z theWave
+		EndIf
 	EndFor
-
+	
+	SetDataFolder $df
 End

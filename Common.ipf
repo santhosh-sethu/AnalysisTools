@@ -90,396 +90,7 @@ Function OpenExtFuncWaveListBox(dsName)
 	ListBox extFuncDSListBox win=analysis_tools,listWave=dsListWave_NamesOnly,mode=4,disable=0,listwave=dsListWave_NamesOnly,selwave=dsSelWave,proc=atListBoxProc
 End
 
-Function ChangeControls(currentCmd,prevCmd)
-	String currentCmd,prevCmd
-	Variable tab
-	Wave controlHeight = root:Packages:analysisTools:controlHeight
-	Variable i
-	String cmdStr
-	SVAR runCmdStr =  root:Packages:analysisTools:runCmdStr
-	SVAR cmdList = root:Packages:analysisTools:cmdList
-	
-	SVAR saveCurrentCmd = root:Packages:analysisTools:currentCmd
-	//Erase the help message box
-	AT_DisplayHelpMessage("None")
-	
-//If(cmpstr(currentCmd[0],"-") == 0)
-//		currentCmd = prevCmd
-//		return 0
-//	EndIf
-	
-	//Delete any draw layer items
-	SetDrawLayer/K/W=analysis_tools UserBack
-	
-	strswitch(prevCmd)
-		case "MultiROI":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_multiROI
-			break
-		case "dF Map":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_dfMap
-			break
-		case "Average":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_average
-			break
-		case "Error":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_error
-			break
-		case "Space-Time dF":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_spacetimeDF
-			break
-		case "qkSpot":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_qkSpot
-			break
-		case "ROI Tuning Curve":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_roiTuningCurve
-			break
-		case "Display ROIs":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_displayROIs
-			break
-		case "Adjust Galvo Distortion":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_adjustGalvoDistort
-			break
-		case "Get Dendritic Mask":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_getDendriticMask
-			break
-		case "Mask Scan Data":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_maskScanData
-			break
-		case "Operation":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_operation
-			break
-		case "Get Peaks":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_getPeaks
-			break
-		case "Line Profile":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_lineProfile
-			break
-		case "ROI Segmenter":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_roiSegmenter
-			break
-		case "Register Image":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_registerImage
-			break
-		case "ROI From Map":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_roiFromMap
-			break
-		case "Vector Sum Map":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_vectorSumMap
-			break
-		case "Rescale Scans":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_rescaleScans
-			break
-		case "Data Sets":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_dataSets
-			break
-		case "Get Peak Times":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_getPeakTimes
-			break
-		case "ROI Grid":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_roiGrid
-			break
-		case "Load PClamp":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_loadPClamp
-			break
-		case "Kill Waves":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_killwaves
-			break
-		case "External Function":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_extFunc
-			ControlInfo/W=analysis_tools extFuncPopUp
-			ResolveFunctionParameters("AT_" + S_Value)
-			break	
-	endswitch
-	
-	If(strlen(prevCmd))
-		//Hide controls from previous tab)
-		For(i=0;i<ItemsInList(ctrlList,";");i+=1)
-			ControlInfo/W=analysis_tools $StringFromList(i,ctrlList)
-			cmdStr = TrimString(StringFromList(0,S_Recreation,","))
-			cmdStr += " win=analysis_tools,disable = 1"
-			Execute cmdStr
-		EndFor	
-	EndIf	
-	
-	strswitch(currentCmd)
-		case "MultiROI":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_multiROI
-			runCmdStr = "GetROI()"
-			break
-		case "dF Map":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_dfMap
-			//runCmdStr = "dFMaps()"
-			runCmdStr = "dfMapSimple()"
-			break
-		case "Average":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_average
-			runCmdStr = "AverageWaves()"
-			break
-		case "Error":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_error
-			runCmdStr = "ErrorWaves()"
-			break
-		case "Space-Time dF":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_spacetimeDF
-			runCmdStr = "SpaceTimeDF()"
-			break
-		case "qkSpot":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_qkSpot
-			runCmdStr = "qkSpot()"
-			break
-		case "ROI Tuning Curve":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_roiTuningCurve
-			runCmdStr = "roiTuningCurve()"
-			break
-		case "Display ROIs":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_displayROIs
-			runCmdStr = "displayROIs()"
-			break
-		case "Adjust Galvo Distortion":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_adjustGalvoDistort
-			runCmdStr = ""
-			break
-		case "Get Dendritic Mask":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_getDendriticMask
-			runCmdStr = "getDendriticMask()"
-			break
-		case "Mask Scan Data":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_maskScanData
-			runCmdStr = "maskScanData()"
-			break
-		case "Operation":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_operation
-			runCmdStr = "doOperation()"
-			break
-		case "Get Peaks":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_getPeaks
-			runCmdStr = "getPeaks()"
-			break
-		case "Line Profile":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_lineProfile
-			runCmdStr = "getLineProfile()"
-			break
-		case "ROI Segmenter":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_roiSegmenter
-			runCmdStr = "OpenMask()"
-			break
-		case "Register Image":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_registerImage
-			runCmdStr = "GetRegistrationParameters()"
-			break
-		case "ROI From Map":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_roiFromMap
-			runCmdStr = "ROI_From_MapData()"
-			break
-		case "Vector Sum Map":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_vectorSumMap
-			runCmdStr = "VectorSumMap()"
-			break
-		case "Rescale Scans":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_rescaleScans
-			runCmdStr = "rescale2P_Scans()"
-			break
-		case "Data Sets":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_dataSets
-			runCmdStr = "print \"Define your Data Set!\""
-			break
-		case "Get Peak Times":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_getPeakTimes
-			runCmdStr = "GetPkTimes()"
-			break
-		case "ROI Grid":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_roiGrid
-			runCmdStr = "gridROI()"
-			break
-		case "Load PClamp":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_loadPClamp
-			runCmdStr = ""
-			break
-		case "Kill Waves":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_killwaves
-			runCmdStr = "AT_KillWaves()"
-			break
-		case "External Function":
-			SVAR ctrlList = root:Packages:analysisTools:ctrlList_extFunc
-			runCmdStr = "()"
-			break
-		default:
-			//Loads a package if its not a function
-			LoadPackage(currentCmd)
-			return 0
-	endswitch
-	
-	S_Recreation = ""
-	
-	If(cmpstr(currentCmd,"Adjust Galvo Distortion") == 0)
-		AT_InitializeScanRegister()
-		//Clear any text drawing layers from qkSpot build
-		DrawAction/W=analysis_tools delete
-	Else
-		//Clear any text drawing layers from qkSpot build
-		DrawAction/W=analysis_tools delete
-	EndIf
-		
-	//Show controls from current tab
-	For(i=0;i<ItemsInList(ctrlList,";");i+=1)
-		ControlInfo/W=analysis_tools $StringFromList(i,ctrlList)
-		cmdStr = TrimString(StringFromList(0,S_Recreation,","))
-		cmdStr += " win=analysis_tools,disable = 0"
-		
-		If(StringMatch(cmdStr,"*ch1Check*") && cmpstr("Adjust Galvo Distortion",currentCmd) == 0)
-			CheckBox ch1Check,win=analysis_tools,pos={34,264}
-		ElseIf(StringMatch(cmdStr,"*ch2Check*") && cmpstr("Adjust Galvo Distortion",currentCmd) == 0)
-			CheckBox ch2Check,win=analysis_tools,pos={74,264},title="Ch2"
-		ElseIf(StringMatch(cmdStr,"*ch1Check*") && cmpstr("Adjust Galvo Distortion",currentCmd) != 0)
-			CheckBox ch1Check,win=analysis_tools,pos={10,190},title="Ch1"
-		ElseIf(StringMatch(cmdStr,"*ch2Check*") && cmpstr("Adjust Galvo Distortion",currentCmd) != 0)
-			CheckBox ch2Check,win=analysis_tools,pos={50,190},title="Ch2"
-		EndIf
-		
-		Execute cmdStr
-	EndFor
-	
-	//Change some of the control positions for certain functions
-	strswitch(currentCmd)
-		case "Adjust Galvo Distortion":
-			CheckBox ch1Check,win=analysis_tools,pos={34,264}
-			CheckBox ch2Check,win=analysis_tools,pos={74,264}
-			CheckBox ratioCheck,win=analysis_tools,pos={104,264}
-			AT_InitializeScanRegister()
-			break
-		case "Get Dendritic Mask":
-			CheckBox ch1Check,win=analysis_tools,pos={10,61}
-			CheckBox ch2Check,win=analysis_tools,pos={50,61}
-			CheckBox ratioCheck,win=analysis_tools,pos={90,61}
-			break
-		case "Mask Scan Data":
-			PopUpMenu maskListPopUp win=analysis_tools,value=GetMaskWaveList()
-			CheckBox ch1Check,win=analysis_tools,pos={10,61}
-			CheckBox ch2Check,win=analysis_tools,pos={50,61}
-			CheckBox ratioCheck,win=analysis_tools,pos={90,61}
-			break
-		case "df Map":
-			PopUpMenu maskListPopUp win=analysis_tools,value=GetMaskWaveList()
-			CheckBox ch1Check,win=analysis_tools,pos={10,61}
-			CheckBox ch2Check,win=analysis_tools,pos={50,61}
-			CheckBox ratioCheck,win=analysis_tools,pos={90,61}
-			SetVariable peakStVar win=analysis_tools,pos={230,103}
-			SetVariable peakEndVar win=analysis_tools,pos={235,123}
-			SetVariable bslnStVar win=analysis_tools,pos={232,63}
-			SetVariable bslnEndVar win=analysis_tools,pos={237,83}
-			CheckBox SmoothBox,win=analysis_tools,pos={225,143}
-			SetVariable SmoothFilterVar,win=analysis_tools,pos={240,143}
-			CheckBox histogramCheck win=analysis_tools,pos={10,110}
-			CheckBox RemoveLaserResponseCheck win=analysis_tools,pos={10,151}
-			CheckBox doDarkSubtract win=analysis_tools,pos={10,171}
-			break
-		case "Get Peaks":
-			CheckBox ch1Check,win=analysis_tools,pos={26,61}
-			CheckBox ch2Check,win=analysis_tools,pos={61,61}
-			CheckBox ratioCheck,win=analysis_tools,pos={26,82}
-			PopUpMenu extFuncDS win=analysis_tools,pos={21,110}
-			ListBox extFuncDSListBox win=analysis_tools,pos={21,136}
-			ControlInfo/W=analysis_tools extFuncDS
-			If(cmpstr(S_Value,"--Scan List--") != 0)
-				PopUpMenu extFuncChannelPop win=analysis_tools,pos={175,110},disable=1
-			Else
-				PopUpMenu extFuncChannelPop win=analysis_tools,pos={175,110},disable=0
-			EndIf
-			break
-		case "Line Profile":
-			CheckBox ch1Check,win=analysis_tools,pos={202,142}
-			CheckBox ch2Check,win=analysis_tools,pos={202,162}
-			SetVariable bslnStVar win=analysis_tools,pos={248,165}
-			SetVariable bslnEndVar win=analysis_tools,pos={248,185}
-			SetVariable peakStVar win=analysis_tools,pos={248,206}
-			SetVariable peakEndVar win=analysis_tools,pos={248,226}
-			CheckBox SmoothBox,win=analysis_tools,pos={115,184}
-			SetVariable SmoothFilterVar,win=analysis_tools,pos={135,185}
-			break
-		case "Register Image":
-			CheckBox useScanListCheck win=analysis_tools,pos={278,109},title="Scan\rList"
-			CheckBox ch1Check,win=analysis_tools,pos={10,162}
-			CheckBox ch2Check,win=analysis_tools,pos={50,162}
-			break
-		case "ROI From Map":
-			CheckBox ch1Check,win=analysis_tools,pos={10,61}
-			CheckBox ch2Check,win=analysis_tools,pos={50,61}
-			CheckBox ratioCheck,win=analysis_tools,pos={90,61}
-			CheckBox SmoothBox,win=analysis_tools,pos={142,62}
-			SetVariable SmoothFilterVar,win=analysis_tools,pos={162,62}
-			break
-		case "Vector Sum Map":
-			CheckBox ch1Check,win=analysis_tools,pos={10,61}
-			CheckBox ch2Check,win=analysis_tools,pos={50,61}
-			CheckBox ratioCheck,win=analysis_tools,pos={90,61}
-			SetVariable angleList,win=analysis_tools,pos={10,81}
-			PopUpMenu presetAngleListPop,win=analysis_tools,pos={10,101}
-			Button addPresetAngle,win=analysis_tools,pos={130,101}
-			Button deletePresetAngle,win=analysis_tools,pos={155,101}
-			CheckBox histogramCheck win=analysis_tools,pos={10,125}
-			break
-		case "Rescale Scans":
-			CheckBox ch1Check,win=analysis_tools,pos={10,61}
-			CheckBox ch2Check,win=analysis_tools,pos={50,61}
-			break
-		case "Display ROIs":
-			PopUpMenu presetAngleListPop,win=analysis_tools,pos={10,124}
-			Button addPresetAngle,win=analysis_tools,pos={131,124}
-			Button deletePresetAngle,win=analysis_tools,pos={156,124}
-			break
-		case "External Function":			
-			ControlInfo/W=analysisTools extFuncPopUp
-			ResolveFunctionParameters("AT_" + S_Value)
-			PopUpMenu extFuncDS win=analysis_tools,pos={21,90}
-			ListBox extFuncDSListBox win=analysis_tools,pos={180,121}
-			break
-		case "Data Sets":
-			SetDrawLayer/W=analysis_tools UserBack
-			SetDrawEnv/W=analysis_tools fsize=12,xcoord=abs,ycoord=abs
-			DrawText/W=analysis_tools 95,117,"Waves:"
-			DrawText/W=analysis_tools 255,117,"Data Sets:"
-			SetDrawLayer/W=analysis_tools ProgBack
-			break
-		case "Operation":
-			SetDrawLayer/W=analysis_tools UserBack
-			SetDrawEnv/W=analysis_tools fsize=12,xcoord=abs,ycoord=abs
-			DrawText/W=analysis_tools 95,117,"Waves:"
-			DrawText/W=analysis_tools 255,117,"Data Sets:"
-			SetDrawLayer/W=analysis_tools ProgBack
-			break
-		case "Average":
-		case "Error":
-		case "Kill Waves":
-			PopUpMenu extFuncChannelPop win=analysis_tools,pos={21,90},disable=1
-			ListBox extFuncDSListBox win=analysis_tools,pos={180,121},disable=1
-			ControlInfo/W=analysis_tools extFuncDS
-			SetExtFuncMenus(S_Value)
-			break
-		default:
-				//return controls to default positions
 
-			CheckBox ch1Check,win=analysis_tools,pos={10,127}
-			CheckBox ch2Check,win=analysis_tools,pos={50,127}
-			CheckBox ratioCheck,win=analysis_tools,pos={90,127}
-			SetVariable bslnStVar win=analysis_tools,pos={10,65}
-			SetVariable bslnEndVar win=analysis_tools,pos={15,85}
-			SetVariable peakStVar win=analysis_tools,pos={120,65}
-			SetVariable peakEndVar win=analysis_tools,pos={125,85}
-			CheckBox SmoothBox,win=analysis_tools,pos={10,107}
-			SetVariable SmoothFilterVar,win=analysis_tools,pos={30,107}
-			CheckBox useScanListCheck win=analysis_tools,pos={115,142},title="Use Scan List"
-			SetVariable angleList,win=analysis_tools,pos={10,186}
-			PopUpMenu presetAngleListPop,win=analysis_tools,pos={10,205}
-			Button addPresetAngle,win=analysis_tools,pos={131,205}
-			Button deletePresetAngle,win=analysis_tools,pos={156,205}
-			CheckBox RemoveLaserResponseCheck win=analysis_tools,pos={10,231}
-			CheckBox doDarkSubtract win=analysis_tools,pos={10,250}
-			PopUpMenu extFuncDS win=analysis_tools,pos={21,90}
-			ListBox extFuncDSListBox win=analysis_tools,pos={180,121}
-			break
-	endswitch
-
-End
 
 //Loads a function package
 Function LoadPackage(thePackage)
@@ -3823,4 +3434,87 @@ Function/WAVE StringListToTextWave(strList,separator)
 	EndFor
 
 	return textWave
+End
+
+Function selectALL(control,mode)
+	String control,mode
+	//Selection wave for the scan list
+	Wave scanSelWave = root:Packages:twoP:examine:selWave
+	//Selection wave for the ROI list
+	Wave roiSelWave = root:Packages:twoP:examine:ROIListSelWave
+	//Selection wave for the folder list
+	Wave folderSelWave = root:Packages:analysisTools:selFolderWave
+	//Selection wave for the wave item list
+	Wave itemSelWave = root:Packages:analysisTools:itemListSelWave
+	
+	strswitch(mode)
+		case "AT":
+			strswitch(control)
+				case "selectAll_Left":
+					scanSelWave = 1
+					break
+				case "selectAll_Right":
+					roiSelWave = 1
+					break
+			endswitch
+		break
+		case "Browser":
+			strswitch(control)
+				case "selectAll_Left":
+					folderSelWave = 1
+					break
+				case "selectAll_Right":
+					itemSelWave = 1
+					break
+			endswitch
+		break
+	endswitch
+End
+
+Function/S resolveCmdLine(cmdLineStr,wsn,wsi)
+	String cmdLineStr
+	Variable wsn,wsi
+	
+	//WaveSet data
+	//ControlInfo/W=analysis_tools extFuncDS
+	//numWaveSets = GetNumWaveSets(S_Value)
+	//wsDims = GetWaveSetDims(S_Value)
+	
+	String left = "",right = "",dsName="",char="",outStr="",tempStr=""
+	Variable pos1,pos2,numChars,i
+	
+	//Divide into left and right sides of an equals sign
+	left = StringFromList(0,cmdLineStr,"=")
+	right = StringFromList(1,cmdLineStr,"=")
+
+	
+	pos1 = 0;pos2 = 0
+	outStr = ""
+	Do
+		pos1 = strsearch(cmdLineStr,"<",0)
+		pos2 = strsearch(cmdLineStr,">",pos1)
+		
+		//If a valid data set syntax was found
+		If(pos1 != -1 && pos2 != -1)
+			dsName = cmdLineStr[pos1+1,pos2-1]
+			Wave/T/Z ds = GetDataSetWave(dsName=dsName)
+			
+			String theWaveSet = GetWaveSet(dsName,wsn=wsn)
+			String theWaveStr = StringFromList(wsi,theWaveSet,";")
+			
+			//section of string that isn't a data set reference
+			tempStr = cmdLineStr[0,pos1-1]
+			
+			//insert into wave name the output command string
+			outStr += tempStr + theWaveStr
+			
+			//trim to the remaining section of unsearched command string
+			cmdLineStr = cmdLineStr[pos2+1,strlen(cmdLineStr)-1]
+		Else
+			//append remaining characters to the output command string
+			outStr += cmdLineStr
+			break
+		EndIf
+	While(pos1 != -1)
+	return outStr
 End

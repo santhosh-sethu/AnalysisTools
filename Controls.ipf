@@ -8,7 +8,7 @@ Function atButtonProc(ba) : ButtonControl
 	SVAR runCmdStr = root:Packages:analysisTools:runCmdStr
 	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	SVAR selectedWave = root:Packages:analysisTools:selectedWave
-	
+	SVAR whichList = root:Packages:analysisTools:whichList
 	
 	//Parameters
 	NVAR Gnumtrials = root:Packages:analysisTools:Gnumtrials
@@ -28,38 +28,103 @@ Function atButtonProc(ba) : ButtonControl
 			strswitch(ba.ctrlName)
 				case "AT_RunCmd":
 					ControlInfo/W=analysis_tools AT_CommandPop
-					If(cmpstr(S_Value,"Line Profile") == 0)
-						ControlInfo/W=analysis_tools SR_WaveList
-						runCmdStr = ""
-						runCmdStr = "DoWindow/F " + S_Value + ";getLineProfile()"
-						RunCmd(runCmdStr)
-					ElseIf(cmpstr(S_Value,"External Function") == 0 || cmpstr(S_Value,"Average") == 0 || cmpstr(S_Value,"Error") == 0 || cmpstr(S_Value,"Kill Waves") == 0)
-						SVAR wsDims = root:Packages:analysisTools:DataSets:wsDims
-						NVAR numWaveSets = root:Packages:analysisTools:DataSets:numWaveSets
-						NVAR wsn = root:Packages:analysisTools:DataSets:wsn
-						wsDims = ""
-						numWaveSets = 0
-						
-						//Command string
-						If(cmpstr(S_Value,"External Function") == 0)
-							runCmdStr = SetExtFuncCmd()
-						EndIf
 					
-						//WaveSet data
-						ControlInfo/W=analysis_tools extFuncDS
-						numWaveSets = GetNumWaveSets(S_Value)
-						wsDims = GetWaveSetDims(S_Value)
-						
-						//Run the command for the designated number of wavesets
-						Variable ref = StartMSTimer
-						For(wsn=0;wsn<numWaveSets;wsn+=1)		
+					strswitch(S_Value)
+						case "Line Profile":
+							ControlInfo/W=analysis_tools SR_WaveList
+							runCmdStr = ""
+							runCmdStr = "DoWindow/F " + S_Value + ";getLineProfile()"
 							RunCmd(runCmdStr)
-						EndFor
-						Variable dur = StopMSTimer(ref)/1000000
-						print runCmdStr + "..." + num2str(numWaveSets) + " wavesets..." + num2str(dur) + " s"
-					Else	
-						RunCmd(runCmdStr)
-					EndIf
+							break
+						case "Run Cmd Line":
+							SVAR wsDims = root:Packages:analysisTools:DataSets:wsDims
+							NVAR numWaveSets = root:Packages:analysisTools:DataSets:numWaveSets
+							NVAR wsn = root:Packages:analysisTools:DataSets:wsn
+							wsDims = ""
+							numWaveSets = 0
+							ControlInfo/W=analysis_tools cmdLineStr
+							String cmdLineStr = S_Value
+							
+							Variable pos1 = 0,pos2 = 0,j,numWaves
+							String dsRefList = "",dsName = ""
+							
+							//Find the data set references in the command string
+							Do
+								pos1 = strsearch(S_Value,"<",0)
+								pos2 = strsearch(S_Value,">",pos1)
+								If(pos1 != -1 && pos2 != -1)
+									dsName = S_Value[pos1+1,pos2-1]
+									dsRefList += dsName + ";"
+									S_Value = S_Value[pos2+1,strlen(S_Value)-1]
+								Else
+									break
+								EndIf
+							While(pos1 != -1)
+							
+							//Test whether they have the same number of waveset dimensions
+							String dims = GetWaveSetDims(StringFromList(0,dsRefList,";"))
+							If(ItemsInList(dsRefList,";") > 0)	//if there are data set references, otherwise continue
+								For(i=1;i<ItemsInList(dsRefList,";");i+=1)
+									String testDims = GetWaveSetDims(StringFromList(i,dsRefList,";"))
+									If(cmpstr(testDims,dims))
+										Abort "Data sets must have the same dimensions"
+									EndIf
+								EndFor		
+								
+								dsName = StringFromList(0,dsRefList,";") //name of first data set found		
+								numWaveSets = GetNumWaveSets(dsName)	//number wave sets
+							Else
+								numWaveSets = 1
+							EndIf
+							
+							For(i=0;i<numWaveSets;i+=1)
+								If(strlen(dsName))
+									String theWaveSet = GetWaveSet(dsName,wsn=i)
+									numWaves = ItemsInList(theWaveSet,";")
+								Else
+									numWaves = 1
+								EndIf
+								
+								For(j=0;j<numWaves;j+=1)
+									runCmdStr = resolveCmdLine(cmdLineStr,i,j)
+									RunCmd(runCmdStr)
+									print runCmdStr
+								EndFor
+							EndFor
+
+							break
+						case "External Function":
+						case "Average":
+						case "Error":
+						case "Kill Waves":
+							SVAR wsDims = root:Packages:analysisTools:DataSets:wsDims
+							NVAR numWaveSets = root:Packages:analysisTools:DataSets:numWaveSets
+							NVAR wsn = root:Packages:analysisTools:DataSets:wsn
+							wsDims = ""
+							numWaveSets = 0
+							
+							//Command string
+							If(cmpstr(S_Value,"External Function") == 0)
+								runCmdStr = SetExtFuncCmd()
+							EndIf
+						
+							//WaveSet data
+							ControlInfo/W=analysis_tools extFuncDS
+							numWaveSets = GetNumWaveSets(S_Value)
+							wsDims = GetWaveSetDims(S_Value)
+							
+							//Run the command for the designated number of wavesets
+							Variable ref = StartMSTimer
+							For(wsn=0;wsn<numWaveSets;wsn+=1)		
+								RunCmd(runCmdStr)
+							EndFor
+							Variable dur = StopMSTimer(ref)/1000000
+							print runCmdStr + "..." + num2str(numWaveSets) + " wavesets..." + num2str(dur) + " s"
+							break
+						default:
+							RunCmd(runCmdStr)
+							break
+					endswitch
 
 					break
 				case "atBrowseBackButton":
@@ -72,6 +137,11 @@ Function atButtonProc(ba) : ButtonControl
 					break
 				case "nudgeROI":
 					NudgeROI()
+					break
+				case "selectAll_Left":
+				case "selectAll_Right":
+					//select all scans,ROIs,folders, or wave items
+					selectALL(ba.ctrlName,whichList)
 					break
 				case "saveLineProfile":
 					saveLineProfile()
@@ -182,8 +252,8 @@ Function atButtonProc(ba) : ButtonControl
 					//Duplicates the Viewer graph outside of the viewer
 					String winRec = WinRecreation("analysis_tools#atViewerGraph",0)
 					
-					Variable pos1 = strsearch(winRec,"/W",0)
-					Variable pos2 = strsearch(winRec,"/FG",0) - 1
+					pos1 = strsearch(winRec,"/W",0)
+					pos2 = strsearch(winRec,"/FG",0) - 1
 					
 					String matchStr = winRec[pos1,pos2]
 					winRec = ReplaceString(matchStr,winRec,"/W=(" + num2str(V_right+10) + "," + num2str(V_top) + "," + num2str(V_right+360) + "," + num2str(V_top+200) + ")")
@@ -822,7 +892,7 @@ Function atPopProc(pa) : PopupMenuControl
 							DrawText/W=analysis_tools 175,100,"Waves:"
 							OpenExtFuncWaveListBox(S_Value)
 						EndIf
-					ElseIf(!cmpstr(pa.popStr,"Average") || !cmpstr(pa.popStr,"Error") || !cmpstr(pa.popStr,"Kill Waves") )
+					ElseIf(!cmpstr(pa.popStr,"Average") || !cmpstr(pa.popStr,"Error") || !cmpstr(pa.popStr,"Kill Waves")  || !cmpstr(pa.popStr,"Run Cmd Line"))
 						Wave/Z/T dataSetNames = root:Packages:analysisTools:DataSets:dataSetNames
 						SVAR DSNames = root:Packages:analysisTools:DSNames
 						DSNames = "--None--;--Scan List--;--Item List--;" + textWaveToStringList(dataSetNames,";")		
