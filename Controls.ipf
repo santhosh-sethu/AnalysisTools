@@ -212,15 +212,43 @@ Function atButtonProc(ba) : ButtonControl
 					addDataSet(S_Value)
 					ListBox dataSetListBox win=analysis_tools,selRow=DimSize(dataSetNames,0)-1
 					fillFilterTable()
+					
+					Wave/T dsFilters = root:Packages:analysisTools:DataSets:dsFilters
+					Variable index = tableMatch(S_Value,dsFilters)
+					dsFilters[index][1] = getListRange("0-1",dsFilters[index][1],";") + ";;;;;;"
+					
 					break
 				case "addDataSetFromSelection":
-					ControlInfo/W=analysis_tools dataSetName
-					
+					Wave/T dataSetNames = root:Packages:analysisTools:DataSets:dataSetNames
+					ControlInfo/W=analysis_tools dataSetName	
 					addDataSet(S_Value,selection=1)
+					ListBox dataSetListBox win=analysis_tools,selRow=DimSize(dataSetNames,0)-1
+					fillFilterTable()
+					
+					Wave/T dsFilters = root:Packages:analysisTools:DataSets:dsFilters
+					index = tableMatch(S_Value,dsFilters)
+					dsFilters[index][1] = getListRange("0-1",dsFilters[index][1],";") + ";;;;;;"
 					break
 				case "delDataSet":
+					Wave/T listWave = root:Packages:analysisTools:DataSets:dataSetNames
 					ControlInfo/W=analysis_tools dataSetListBox
 					delDataSet(V_Value)
+					
+					If(V_Value == 0)
+						ListBox dataSetListBox win=analysis_tools,selRow=V_Value
+						index = V_Value						
+					Else
+						ListBox dataSetListBox win=analysis_tools,selRow=V_Value-1
+						index = V_Value - 1
+					EndIf
+					
+					Wave/T dataSetWave = $("root:Packages:analysisTools:DataSets:DS_" + listWave[index])
+					//update the list box to show the newly selected data set
+					UpdateDSListBox(dataSetWave)
+					
+					checkMissingWaves(listWave[index])
+					updateWSDimText()
+					updateWSFilters()
 					break
 				case "reloadATButton":
 					GetWindow/Z analysis_tools wsize
@@ -509,18 +537,10 @@ Function atListBoxProc(lba) : ListBoxControl
 					//If selection is past the item list
 					If(selection > DimSize(listWave,0) - 1)
 						break
-					EndIF
+					EndIf
 					
 					Wave/T dataSetWave = $("root:Packages:analysisTools:DataSets:DS_" + listWave[selection])
-					
-					If(!WaveExists(dataSetWave))
-						break
-					EndIf		
-					
-					Redimension/N=(DimSize(dataSetWave,0)) waveListTable,matchListselWave
-					For(i=0;i<DimSize(DataSetWave,0);i+=1)
-						waveListTable[i] = ParseFilePath(0,dataSetWave[i],":",1,0)
-					EndFor
+					UpdateDSListBox(dataSetWave)
 					
 					checkMissingWaves(listWave[selection])
 					updateWSDimText()
@@ -948,6 +968,11 @@ Function atSetVarProc(sva) : SetVariableControl
 				case "waveMatch":
 					SVAR waveMatchStr = root:Packages:analysisTools:waveMatchStr
 					waveMatchStr = sval
+					
+					//Remove selection from the data set box
+					ListBox dataSetListBox win=analysis_tools,selRow=-1
+					clearFilterSet()
+					
 					getWaveMatchList()
 					fillFilterTable()
 					updateWSDimText()
@@ -956,6 +981,10 @@ Function atSetVarProc(sva) : SetVariableControl
 				case "waveNotMatch":
 					SVAR waveNotMatchStr = root:Packages:analysisTools:waveNotMatchStr
 					waveNotMatchStr = sval
+					//Remove selection from the data set box
+					ListBox dataSetListBox win=analysis_tools,selRow=-1
+					clearFilterSet()
+					
 					getWaveMatchList()
 					fillFilterTable()
 					updateWSDimText()				

@@ -678,6 +678,14 @@ Function fillFilterTable()
 
 End
 
+Function clearFilterSet()
+	SetVariable prefixGroup win=analysis_tools,value=_STR:""
+	SetVariable groupGroup win=analysis_tools,value=_STR:""
+	SetVariable seriesGroup win=analysis_tools,value=_STR:""
+	SetVariable sweepGroup win=analysis_tools,value=_STR:""
+	SetVariable traceGroup win=analysis_tools,value=_STR:""
+End
+
 //If it finds any emtpy wavesets, eliminates them
 Function checkWaveSets(dataSetName)
 	String dataSetName
@@ -967,4 +975,23 @@ Function setWaveGrouping(theList,dataSetName)
 	EndFor
 	
 	//updateWaveListBox()
+End
+
+
+//updates the wave list box to show the contents of the selected data set
+Function updateDSListBox(ds)
+	Wave/T ds
+	Wave/T waveListTable = root:Packages:analysisTools:AT_waveListTable
+	Wave matchListselWave = root:Packages:analysisTools:AT_selWave
+	Variable i
+				
+	If(!WaveExists(ds))
+		return -1
+	EndIf		
+	
+	Redimension/N=(DimSize(ds,0)) waveListTable,matchListselWave
+	For(i=0;i<DimSize(ds,0);i+=1)
+		waveListTable[i] = ParseFilePath(0,ds[i],":",1,0)
+	EndFor
+
 End

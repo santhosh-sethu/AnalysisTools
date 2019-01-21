@@ -25,6 +25,21 @@ Function/S getExternalFunctions(fileList)
 	return theList
 End
 
+//Returns the items in the index range from a string list
+Function/S getListRange(index,list,separator)
+	String index,list,separator
+	String outList = ""
+	
+	Variable i,pos
+	
+	index = resolveListItems(index,",")
+	For(i=0;i<ItemsInList(index,",");i+=1)
+		pos = str2num(StringFromList(i,index,","))
+		outList += StringFromlist(pos,list,separator) + ";"
+	EndFor
+	return outList
+End
+
 //Runs the selected commmand
 Function RunCmd(cmdStr)
 	String cmdStr
@@ -1227,8 +1242,8 @@ End
 Function/S getSelectedItems()
 	SVAR selWaveList = root:Packages:analysisTools:selWaveList
 	SVAR cdf = root:Packages:analysisTools:currentDataFolder
-	WAVE/T/Z listWave = root:Packages:analysisTools:waveListTable
-	WAVE/Z selWave = root:Packages:analysisTools:selWave
+	WAVE/T/Z listWave = root:Packages:analysisTools:itemListTable
+	WAVE/Z selWave = root:Packages:analysisTools:itemListSelWave
 	Variable i
 	
 	selWaveList = ""
