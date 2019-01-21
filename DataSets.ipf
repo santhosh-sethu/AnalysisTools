@@ -120,6 +120,13 @@ Function addDataSet(dataSetName,[selection])
 	
 	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	String possiblePath
+	
+	//Does the data set name already exist?
+	//If so, return
+	If(tableMatch(dataSetName,dataSetNames) != -1)
+		return -1
+	EndIf
+	
 		
 	If(selection)
 		//Get the wave paths from the item list box
@@ -637,11 +644,20 @@ Function/S InsertDSWaveNames(opStr,index)
 End
 
 //Finds selected data set, updates it with the waves in the wave list box.
-Function updateSelectedDataSet()
+//Input the data set index to update a specific data set that isn't selected necessarily
+Function updateSelectedDataSet([index])
+	Variable index
+	
 	//get the data set wave
 	Wave/T dataSetNames = root:Packages:analysisTools:DataSets:dataSetNames
-	ControlInfo/W=analysis_tools dataSetListBox
-	String dsName = dataSetNames[V_Value]
+	
+	//Use selected data set if no index is provided
+	If(ParamIsDefault(index))
+		ControlInfo/W=analysis_tools dataSetListBox
+		index = V_Value
+	EndIf
+	
+	String dsName = dataSetNames[index]
 	Wave/T ds = GetDataSetWave(dsName=dsName)
 		
 	//Wave list table
