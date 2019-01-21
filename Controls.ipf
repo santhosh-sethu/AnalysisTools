@@ -140,8 +140,18 @@ Function atButtonProc(ba) : ButtonControl
 					break
 				case "selectAll_Left":
 				case "selectAll_Right":
+					Wave selWave = root:Packages:analysisTools:itemListSelWave
+					Wave/T listWave = root:Packages:analysisTools:itemListTable
+					SVAR viewerRecall = root:Packages:analysisTools:viewerRecall
 					//select all scans,ROIs,folders, or wave items
 					selectALL(ba.ctrlName,whichList)
+				
+					String selWaveList = tableToList(listWave,";")
+					AppendToViewer(selWaveList)
+										
+					//Set to null if a selection has changed.
+					viewerRecall = ""
+					
 					break
 				case "saveLineProfile":
 					saveLineProfile()

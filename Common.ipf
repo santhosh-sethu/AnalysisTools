@@ -1431,7 +1431,18 @@ Function tableMatch(str,tableWave,[startp,endp])
 	return -1
 End
 
+//Takes table, creates string list with its contents
+Function/S tableToList(table,separator)
+	Wave/T table
+	String separator
+	String list = ""
+	Variable i
 
+	For(i=0;i<DimSize(table,0);i+=1)
+		list += table[i] + separator
+	EndFor
+	return list
+End
 
 Function/S ResolveErrorCode(cmdStr)
 	String cmdStr
