@@ -698,42 +698,15 @@ Function atCheckProc(cba) : CheckBoxControl
 			strswitch(cba.ctrlName)
 				case "SmoothBox":
 				//// Temporal filter check box/////////////
-					NVAR TempFilter = root:Packages:analysisTools:TempFilter
-			
-					if(checked)
-						TempFilter = 1
-						setvariable SmoothFilterVar disable = 0
-					else
-						TempFilter = 0
-						setvariable SmoothFilterVar disable = 2
-					endif
-					
+
 					break
 				case "SpaceFilterBox":
 				//// Spatial filter check box/////////////
-					NVAR SpaceFilter = root:Packages:analysisTools:SpaceFilter
-			
-					if(checked)
-						SpaceFilter = 1
-						setvariable SpaceFilterVar disable = 0
-					else
-						SpaceFilter = 0
-						setvariable SpaceFilterVar disable = 2
-					endif
-					
+
 					break
 				case "DarkSubtBox":
 				//// Dark subtraction/////////////
-					NVAR darkValue = root:Packages:analysisTools:GdarkValue
-			
-					if(checked)
-						setvariable DarkValueVar disable = 0
-						DarkROI(darkValue)	
-					else	
-						darkValue = 0
-						setvariable DarkValueVar disable = 2
-					endif
-					
+
 					break
 				case "NotSeqBox":
 					string curFolder = getdatafolder(1)
@@ -748,112 +721,6 @@ Function atCheckProc(cba) : CheckBoxControl
 		case -1: // control being killed
 			break
 	endswitch
-	return 0
-End
-
-//Called by the tab controller
-Function atTabProc(tca) : TabControl
-	STRUCT WMTabControlAction &tca
-	SVAR tabList = root:Packages:analysisTools:tabList
-	SVAR currentTab = root:Packages:analysisTools:currentTab
-	SVAR prevTab =  root:Packages:analysisTools:prevTab
-	SVAR MBr_WindowSettings = root:Packages:analysisTools:MBr_WindowSettings
-	SVAR whichList = root:Packages:analysisTools:whichList
-	NVAR viewerOpen = root:Packages:analysisTools:viewerOpen
-
-	Variable i
-	
-	switch( tca.eventCode )
-		case 2: // mouse up
-			Variable tab = tca.tab
-			//prevTab = currentTab
-			//currentTab = StringFromList(tab,tabList,";")
-			//hide or show controls
-			//ChangeControls(currentCmd,prevCmd)
-			//ChangeTabs(currentTab,prevTab)
-			currentTab = StringFromList(tab,tabList,";")
-			
-			strswitch(currentTab)
-				case "Analysis":
-					break //does nothing for now
-					
-					
-					//blocks the Browser functionality for Windows bc it currently doesn't work that well
-					String platform = IgorInfo(2)
-					If(cmpstr(platform,"Windows") == 0)
-						break
-					EndIf
-					
-					DoWindow MBr
-					If(V_flag)
-						GetWindow MBr wsize
-						MBr_WindowSettings = "Width:" + num2str(V_right - V_left) + ";Height:" + num2str(V_bottom - V_top)
-						SetWindow MBr hide=1
-						
-						If(cmpstr(whichList,"Browser") == 0)
-							MoveWindow/W=analysis_tools V_left,V_top,V_left+575+75,V_top+510
-						Else
-							MoveWindow/W=analysis_tools V_left,V_top,V_left+575,V_top+510
-						EndIf
-						
-						SetWindow analysis_tools hide=0
-						TabControl atTab win=analysis_tools,value=0
-					EndIf
-											
-					If(viewerOpen == 1)
-						openViewer()
-					EndIf
-					
-					break
-				case "Browser":
-					platform = IgorInfo(2)
-					
-					//blocks the Browser functionality for Windows bc it currently doesn't work that well
-					If(cmpstr(platform,"Windows") == 0)
-						break
-					Else
-						break	//removes browser entirely for now.
-					EndIf
-					
-					GetWindow analysis_tools wsize
-					SetWindow analysis_tools hide=1
-					
-					DoWindow MBr
-					If(!V_flag)
-						InitializeMBrfromFUNC(V_left,V_top)
-						//Make additional tabs on MBr
-						TabControl atTabMBr win=MBr,pos={0,0},proc=atTabProc
-						For(i=0;i<ItemsInList(tabList,";");i+=1)
-							//575-235 = width -235
-							TabControl atTabMBr win=MBr,tabLabel(i) = StringFromList(i,tabList,";"),size={575-235,20}
-						EndFor
-					Else
-						Variable width = str2num(StringByKey("Width",MBr_WindowSettings,":",";"))
-						Variable height = str2num(StringByKey("Height",MBr_WindowSettings,":",";"))
-						
-						//MoveWindow/W=MBr V_left,V_top,V_left+900,V_top+450
-						MoveWindow/W=MBr V_left,V_top,V_left+width,V_top+height
-						SetWindow MBr hide=0
-						TabControl atTabMBr win=MBr,value=1
-
-					EndIf
-					
-					break
-				case "Data Sets":
-					GetWindow MBr wsize
-					MBr_WindowSettings = "Width:" + num2str(V_right - V_left) + ";Height:" + num2str(V_bottom - V_top)
-					SetWindow MBr hide=1
-					MoveWindow/W=analysis_tools V_left,V_top,V_left+575,V_top+500
-					SetWindow analysis_tools hide=0
-					TabControl atTab win=analysis_tools,value=0
-					break
-			endswitch
-			
-			break
-		case -1: // control being killed
-			break
-	endswitch
-
 	return 0
 End
 

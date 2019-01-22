@@ -1,5 +1,10 @@
 //Loads the analysis suite GUI
 
+#include "atFunctions"
+#include "atControls"
+#include "atCommon"
+#include "atDataSets"
+
 Menu "Data", dynamic
 	Submenu "Packages"
 		 "Load Analysis Suite"
@@ -280,25 +285,7 @@ Function LoadAnalysisSuite([left,top])
 	
 	///TAB LIST - semi-colon separated list of the tab names.
 	//Just add another entry to the list to make a new tab.
-	tabList = "Analysis"//;Browser"
-	
-	
-	//MBr tools 
-	//DoWindow MBr
-	If(V_flag)
-		KillWindow/Z MBr
-	EndIf
-	
-	//NewPanel/N=MBr/W=(left,top,left+900,top+450)/K=1/HIDE=1 as "Matrix Browser"
-	
-	//Make additional tabs on MBr
-	//TabControl atTabMBr win=MBr,pos={0,0},proc=atTabProc
-	//For(i=0;i<ItemsInList(tabList,";");i+=1)
-		//575-235 = width -235
-	//	TabControl atTabMBr win=MBr,tabLabel(i) = StringFromList(i,tabList,";"),size={575-235,20}
-	//EndFor
-	//MBr_BuildControls()
-	
+	tabList = "Analysis"
 	
 	Make/O/N=(ItemsInList(tabList,";")) root:Packages:analysisTools:controlHeight
 	Wave controlHeight = root:Packages:analysisTools:controlHeight

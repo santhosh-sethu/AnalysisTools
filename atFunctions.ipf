@@ -1,18 +1,6 @@
 #pragma TextEncoding = "UTF-8"
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
 #include <New Polar Graphs>
-#include "analysisTools_Loader"
-#include "MBr"
-#include "Controls"
-#include "Common"
-#include "DataSets"
-
-
-
-
-
-
-
 
 //Finds any help message within an external function, prints the help message
 Function displayExtFuncHelp(theFunction)
@@ -107,10 +95,6 @@ End
 //Flips the list boxes between showing scanlistbox and ROI listbox to the full data browser folder/item list boxes
 Function flipLists(whichList)
 	String whichList
-	
-	//match strings	
-	SVAR matchStr = root:Packages:MBr:matchStr
-	SVAR notMatchStr = root:Packages:MBr:notMatchStr
 
 	//current data folder string
 	SVAR cdf = root:Packages:analysisTools:currentDataFolder
@@ -170,7 +154,6 @@ Function flipLists(whichList)
 			
 			//Change some control assignments
 			ListBox/Z WaveListBox win=analysis_tools#scanListPanel,selWave=selWave,listWave=scanListWave,proc=atListBoxProc,disable=0
-			//ListBox/Z ROIListBox win=analysis_tools#scanListPanel,selWave=ROIListSelWave,listWave=ROIListWave,size={80,500-65},proc=atListBoxProc	
 
 			break
 		case "Browser":
@@ -188,9 +171,7 @@ Function flipLists(whichList)
 			
 			//Hide some controls
 			ListBox/Z WaveListBox win=analysis_tools#scanListPanel,selWave=selWave,listWave=scanListWave,proc=atListBoxProc,disable=1
-			Button nudgeROI win=analysis_tools#scanListPanel,disable = 1
-			//ListBox ROIListBox win=analysis_tools#scanListPanel,disable=1
-			
+			Button nudgeROI win=analysis_tools#scanListPanel,disable = 1			
 			
 			//Show some controls
 			Button atBrowseButton win=analysis_tools#scanListPanel,title="Scans"
@@ -200,7 +181,6 @@ Function flipLists(whichList)
 			//Change some control assignments
 			ListBox AT_FolderListBox win=analysis_tools#scanListPanel,size={140,500-65},pos={0,30},mode=4,listWave=folderTable,selWave=selFolderWave,proc=atListBoxProc,disable=0
 			ListBox AT_ItemListBox win=analysis_tools#scanListPanel,listWave=waveListTable,selWave=itemListSelWave,mode=4,size={80+100,500-65},pos={150,30},proc=atListBoxProc,disable = 0
-			//ListBox ROIListBox win=analysis_tools#scanListPanel,listWave=waveListTable,selWave=selWaveMBr,size={80+75,500-65},proc=MBr_ListBoxProc
 
 			break
 	endswitch
@@ -549,519 +529,8 @@ End
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 //---------------------------------FUNCTIONS---------------------------------
 
-
-Function ROI_From_MapData()
-	SVAR scanListStr = root:Packages:twoP:examine:scanListStr
-	SVAR ROIListStr = root:Packages:twoP:examine:ROIListStr 
-	Variable k,i,j,s,r,count
-	
-	String channel = getChannel(1)
-	channel = RemoveEnding(channel,";")
-	String dFtype
-	
-	//Make wave list string for average results
-	ControlInfo/W=analysis_tools avgResultsCheck
-	Variable avgResults = V_Value
-	
-	//Loop through ROIs
-	For(r=0;r<ItemsInList(ROIListStr,";");r+=1)
-		//result list (for averaging) is reset after every ROI loop
-		String resultList = ""
-		
-		String ROI = StringFromList(r,ROIListStr,";")
-		String foldername = "root:ROI_analysis:ROI"+ROI
-	
-		If(DataFolderExists(foldername))
-			Setdatafolder $foldername
-		Else	
-			NewDataFolder/S $foldername
-		EndIf
-		
-		//X and Y waves that define the ROI area
-		Wave roiX = $("root:twoP_ROIS:" + ROI+"_x")
-		Wave roiY  = $("root:twoP_ROIS:" + ROI+"_y")
-	
-		//Loop through scans
-		For(s=0;s<ItemsInList(scanListStr,";");s+=1)
-	
-			If(cmpstr(channel,"ch1") == 0)
-				String ch1WaveName = "root:twoP_Scans:" + StringFromList(s,scanListStr,";") + ":" + StringFromList(s,scanListStr,";") + "_" + channel + "_dF"
-				Wave ch1Wave = $ch1WaveName
-				dFtype = "dF"
-				If(!WaveExists(ch1Wave))
-					print "Couldn't find wave " + NameOfWave(ch1Wave)
-					return -1
-				Else
-					SetDataFolder GetWavesDataFolder(ch1Wave,1)
-				EndIf
-			ElseIf(cmpstr(channel,"ratio") == 0)
-				ch1WaveName = "root:twoP_Scans:" + StringFromList(s,scanListStr,";") + ":" + StringFromList(s,scanListStr,";") + "_ch1_dGR"
-				Wave ch1Wave = $ch1WaveName
-				dFtype = "dGR"
-			Else
-				print "Only works with ch1 for now."
-				return -1
-			EndIf
-
-			//ROI mask wave
-			ImageBoundaryToMask ywave=roiY,xwave=roiX,width=(dimSize(ch1Wave,0)),height=(dimSize(ch1Wave,1)),scalingwave=ch1Wave,seedx=(dimOffset(ch1Wave,0)+dimDelta(ch1Wave,0)),seedy=(dimOffset(ch1Wave,1)+dimDelta(ch1Wave,1))
-			Wave ROIMask = M_ROIMask
-			
-			String outWaveName = foldername + ":" + ParseFilePath(1,NameOfWave(ch1Wave),"_",0,3) + dFtype + "_ROI" + ROI
-			Make/O/N=(DimSize(ch1Wave,2)) $outWaveName
-			Wave outWave = $outWaveName
-			outWave = 0
-	
-			For(k=0;k<DimSize(ch1Wave,2);k+=1)
-				//count # of real number pixels that are included in the average
-				count = 0
-		
-				For(i=0;i<DimSize(ch1Wave,0);i+=1)
-					For(j=0;j<DimSize(ch1Wave,1);j+=1)
-						//Only pixels within the ROI
-						If(ROIMask[i][j] == 1)
-							continue
-						Else
-							//Only pixels that are real numbers, and not NaNs
-							If(numtype(ch1Wave[i][j][k]) == 2)
-								continue
-							Else
-								outWave[k] += ch1Wave[i][j][k]
-								count+=1
-							EndIf
-						EndIf
-					EndFor
-				EndFor
-				//Get the ROI average for that frame
-				outWave[k]/= count
-			EndFor
-	
-			ControlInfo/W=analysis_tools SmoothBox
-			If(V_Value)
-				ControlInfo/W=analysis_tools SmoothFilterVar
-				Smooth/S=2 V_Value,outWave
-			EndIf
-	
-			SetScale/P x,DimOffset(ch1Wave,2),DimDelta(ch1Wave,2),outWave
-			
-			//list of output wave paths for averaging
-			If(avgResults)
-				resultList += outWaveName + ";"
-			EndIf
-			
-		EndFor
-		
-		//Average the ROIs
-		If(avgResults)
-			
-			//prevent clipboard use for averaging routine
-			NVAR useClipboard = root:Packages:MBr:useClipboard
-			Wave/T clipboardListWave = root:Packages:MBr:clipboardListWave
-			
-			Redimension/N=1 clipboardListWave
-			clipboardListWave[0] = ""
-			useClipboard = 0
-			
-			avgSelectedWaves(resultList,0)
-		EndIf
-		KillWaves/Z ROIMask
-	EndFor
-End
-
-
-//This procedure calculates the dF profile of selected ROIs over the scans selected in "Analysis Tools"
-Function NMultiROI()
-	NVAR Gbatchsize = root:Packages:analysisTools:Gbatchsize
-	NVAR Gnumtrials = root:Packages:analysisTools:Gnumtrials
-	NVAR GbslnSt = root:Packages:analysisTools:GbslnSt
-	NVAR GbslnEnd = root:Packages:analysisTools:GbslnEnd
-	NVAR GpeakSt = root:Packages:analysisTools:GpeakSt
-	NVAR GpeakEnd = root:Packages:analysisTools:GpeakEnd
-	NVAR TempFilter = root:Packages:analysisTools:TempFilter
-	NVAR SmoothSize = root:Packages:analysisTools:GSmoothFilter
-	NVAR red = root:Packages:analysisTools:Gred
-	NVAR green = root:Packages:analysisTools:Ggreen
-	NVAR blue = root:Packages:analysisTools:Gblue
-	
-	wave/T ScanListWave = root:Packages:twoP:examine:ScanListWave
-	wave selWave = root:Packages:twoP:examine:selWave
-	NVAR darkValue = root:Packages:analysisTools:GdarkValue
-	
-	//The ROIs and the scans
-	SVAR scanListStr = root:Packages:twoP:examine:scanListStr
-	SVAR ROIListStr = root:Packages:twoP:examine:ROIListStr
-	
-	//Get angle list
-	CONTROLINFO/W=analysis_tools angleList
-	String angleList = S_Value
-	String errStr = ""
-	String report = ""
-	
-	string ROI,scanName,ValueWaveName
-	
-	//Get channel mode
-	string channelMode = ""
-	string channel = "ch1"
-	CONTROLINFO/W=analysis_tools ch1Check
-	If(V_Value)
-		channelMode += "1"
-	Else
-		channelMode +="0"
-	EndIf
-	
-	CONTROLINFO/W=analysis_tools ch2Check
-	If(V_Value)
-		channelMode += "1"
-	Else
-		channelMode +="0"
-	EndIf
-	
-	CONTROLINFO/W=analysis_tools ratioCheck
-	If(V_Value)
-		channelMode += "1"
-	Else
-		channelMode +="0"
-	EndIf
-
-	string savedFolder = getDataFolder (1)
-	string curFolder = getdatafolder(1)
-
-	if(!DataFolderExists("root:ROI_analysis"))
-		NewDataFolder root:ROI_analysis
-	endif
-	
-	SetDataFolder root:ROI_analysis	
-	
-	variable totalScans = numpnts(ScanListWave)
-//	print "totalScans", totalScans
-	
-	
-	NVAR curScanNumber = root:packages:twoP:examine:curScanNum
-	wave/T ROIListWave = root:packages:twoP:examine:ROIListWave
-	wave ROIListSelWave = root:packages:twoP:examine:ROIListSelWave
-	variable ScanNumber = curScanNumber
-
-	variable ROIList
-	variable bsln
-	variable i
-	
-	//Run for every ROI selected
-	For (ROIList = 0; ROIList < ItemsInList(ROIListStr,";"); ROIList+=1)
-		
-		ScanNumber = curScanNumber
-		variable SelWaveNumber = 0
-			
-		//Get the ROI name
-		ROI = StringFromList(ROIList,ROIListStr,";")
-	
-		String foldername = "root:ROI_analysis:ROI"+ROI
-	
-		If(DataFolderExists(foldername))
-			setdatafolder $foldername
-		Else	
-			NewDataFolder/S $foldername
-		EndIf
-		
-		//X and Y waves that define the ROI area
-		Wave roiX = $("root:twoP_ROIS:" + ROI+"_x")
-		Wave roiY  = $("root:twoP_ROIS:" + ROI+"_y")
-	
-			ValueWaveName = "ROI"+ROI+"_values" //wave that saves the (peak/avg) dF value of each scan
-			if (waveexists($ValueWaveName)==0) //if this wave does not exist, create it
-				make/N = (TotalScans) $ValueWaveName
-			else
-				//Print ValueWaveName +" exists"
-			endif
-			
-			wave ValueSource =  $ValueWaveName
-	
-			
-		//Get direction and order waves
-		Gbatchsize = ItemsInList(scanListStr,";")
-		report += "MultiROI...Scans: " + num2str(Gbatchsize)
-		
-		Make/O/N=(Gbatchsize) order,direction
-		
-		If(ItemsInList(angleList,",") != Gbatchsize)
-			errStr += "Number of angles does not match number of scans"
-			order = x
-			direction = x
-		Else
-			//Get the angle order based on the angle list
-			If(strlen(angleList))
-				Make/FREE/N=(ItemsInList(scanListStr,";")) angleListWave,sortKey
-
-				For(i=0;i<ItemsInList(angleList,",");i+=1)
-					angleListWave[i] = str2num(StringFromList(i,angleList,","))
-				EndFor
-				
-				direction = angleListWave
-				Sort direction,direction
-				
-				For(i=0;i<ItemsInList(angleList,",");i+=1)
-					FindValue/V=(WaveMin(angleListWave)) angleListWave
-					angleListWave[V_Value] = 1000
-					order[i] = V_Value
-				EndFor
-			EndIf
-		EndIf
-			
-
-		Variable st_pt = 0,end_pt = 0
-		String axisname, signals, tracename,firstChannel
-	
-		Variable j, k, ii, l,bothChannels
-		
-		//Run for each trial batch
-		For(i=0;i<Gnumtrials;i+=1)
-			
-			//Run for each scan
-			For(j=0;j<Gbatchsize;j+=1)
-		 		//Get the current scan
-		 		scanName = StringFromList(j,scanListStr,";")
-		 		
-		 		String inputWaveName = "root:twoP_Scans:" + scanName + ":" + scanName
-		 		String inputWaveName2 = inputWaveName	//For possible second channel
-		 		
-		 		//Assign correct scan channels to waves
-		 		If(cmpstr(channelMode,"100") == 0)
-		 			//Channel 1 only
-		 			inputWaveName += "_ch1"
-		 			Wave inputWave = $inputWaveName
-		 			bothChannels = 0
-		 			firstChannel = "ch1"
-		 		ElseIf(cmpstr(channelMode,"010") == 0)
-		 			//Channel 2 only
-		 			inputWaveName += "_ch2"
-		 			Wave inputWave = $inputWaveName
-		 			bothChannels = 0
-		 			firstChannel = "ch2"
-		 		ElseIf(cmpstr(channelMode,"110") == 0)
-		 			//Channel 1 and 2
-		 			inputWaveName += "_ch1"
-		 			inputWaveName2 += "_ch2"
-		 			Wave inputWave = $inputWaveName
-		 			Wave inputWave2 = $inputWaveName2
-		 			bothChannels = 1
-		 			firstChannel = "ch1"
-		 		ElseIf(cmpstr(channelMode[2],"1") == 0)
-		 			//Ratiometric Ch1/Ch2
-		 			inputWaveName += "_ch1"
-		 			inputWaveName2 += "_ch2"
-		 			Wave inputWave = $inputWaveName
-		 			Wave inputWave2 = $inputWaveName2
-		 			bothChannels = 1
-		 			firstChannel = "ch1"
-		 		Else
-		 		//If user didn't check any of the boxes
-		 		//default to Channel 1 only
-		 			inputWaveName += "_ch1"
-		 			Wave inputWave = $inputWaveName
-		 			bothChannels = 0
-		 			firstChannel = "ch1"
-		 		EndIf
-		 		
-				
-				//Check wave existence
-				If(!WaveExists(inputWave))
-					Abort inputWaveName + " - does not exist"
-				ElseIf(bothChannels)
-					If(!WaveExists(inputWave))
-						Abort inputWaveName + " - does not exist"	
-					EndIf
-				EndIf
-				
-				//Make ROI average wave
-				Make/O/N=(DimSize(inputWave, 2)) $(foldername + ":ROIavg_" + firstChannel)
-				Wave ROIavg = $(foldername + ":ROIavg_" + firstChannel)
-				
-				If(bothChannels)
-					Make/O/N=(DimSize(inputWave, 2)) $(foldername + ":ROIavg_ch2")
-					Wave ROIavg2 = $(foldername + ":ROIavg_ch2")
-				EndIf
-				
-				
-				
-				//ROI mask wave
-				ImageBoundaryToMask ywave=roiY,xwave=roiX,width=(dimSize(inputWave,0)),height=(dimSize(inputWave,1)),scalingwave=inputWave,seedx=(dimOffset(inputWave,0)+dimDelta(inputWave,0)),seedy=(dimOffset(inputWave,1)+dimDelta(inputWave,1))
-				WAVE ROIMask = $(foldername + ":M_ROIMask")	
-				
-				//Average values over the ROI mask
-				For(k=0;k<DimSize(inputWave,2);k+=1)
-					ImageStats/M=1/P=(k)/R=ROImask inputWave
-					
-					ROIavg[k] = V_avg
-					If(bothChannels)
-						ImageStats/M=1/P=(k)/R=ROImask inputWave2
-						ROIavg2[k] = V_avg
-					EndIf
-				EndFor
-				
-				
-			
-				If(TempFilter)
-					Smooth/S=2 (SmoothSize), ROIavg //Savitzky-Golay smoothing // SS 10AUG2017 changed num from 15 to 9
-					SetScale/P x,DimOffset(inputWave,2),DimDelta(inputWave,2),ROIavg
-					If(bothChannels)
-						Smooth/S=2 (SmoothSize), ROIavg2
-						SetScale/P x,DimOffset(inputWave,2),DimDelta(inputWave,2),ROIavg2
-					EndIf
-					//IterativeSmooth(ROIavg,1)
-				EndIf
-				
-				
-				
-				If(bothChannels)
-					Variable redBaseline = mean(ROIavg2)
-				EndIf
-				//BE CAREFUL WITH DARK SUBTRACTION. IF THE SUBTRACTION ISN'T THE SAME ACROSS TRIALS, THE ∆F/F CAN
-				//BE VERY WRONG WHEN COMPARING ACROSS TRIALS. TO BE SAFE JUST USE BASELINE SUBTRACTION FROM ROIavg.
-				
-				//Find dark value and subtract from ROI trace
-				
-				ControlInfo/W=analysis_tools DarkValueVar
-				String saveDF = GetDataFolder(1)
-		
-				Wave darkMask = getDendriticMask()
-				//Wave darkMask = root:twoP_Scans:Scan_AVG_ch2_mask
-				Redimension/B/U darkMask
-				
-				If(bothChannels)
-					ImageStats/R=darkMask inputWave2
-					Variable darkValue_ch2 = V_avg
-				EndIf
-					
-				ImageStats/R=darkMask inputWave
-				Variable darkValue_ch1 = V_avg
-				
-				SetDataFolder $saveDF
-				//Make/FREE/N=(round(0.05*DimSize(inputWave,0)),round(0.05*DimSize(inputWave,1)),GbslnEnd - GbslnSt) darkMatrix
-				//darkMatrix[][][] = inputWave[p][q][r + GbslnSt]
-				
-			   //MatrixOP/FREE/O temp = sum(darkMatrix)
-				//temp /= DimSize(darkMatrix,0)*DimSize(darkMatrix,1)
-				//MatrixOP/O dark = sumBeams(temp)
-				//dark /= DimSize(temp,2)
-				//darkValue = dark[0]
-				//print darkValue
-				//ROIavg -= darkValue 
-				
-			
-				//Remove the laser response
-				FlattenLaserResponse(ROIavg,0,GbslnEnd,1,2.25)
-				
-				//Get the baseline value of the trace
-				Wavestats/Q/R = (GbslnSt,GbslnEnd) ROIavg
-				
-				bsln = V_avg
-				
-				String dFName
-				//Make ∆F/F or ∆G/R waves
-				If(cmpstr(channelMode[2],"1") == 0)
-					dFname = scanName + "_ROI" + ROI + "_dGR"
-				Else
-					dFname = scanName + "_ROI" + ROI
-				EndIf
-			
-				Duplicate/O ROIavg, $dFname
-				Wave ROIDF = $dFname 
-				
-				If(cmpstr(channelMode[2],"1") == 0)
-					//∆G/R
-					ROIDF = (ROIavg - (bsln-0.02*bsln))/(redBaseline - darkValue_ch2)
-					//buffers in an extra 2% of the bsln signal so we aren't at a negative baseline all the time. 
-				Else
-					//∆F/F
-					ROIDF = (ROIavg - (bsln-0.05*bsln))/(bsln - darkValue_ch1) 
-				EndIf
-				
-				//Get frame time for scaling
-				Variable delta = DimDelta(inputWave,2)
-				SetScale/P x,0,delta,ROIDF
-				
-				//Finds the peak ∆F/F and puts into a wave
-				Wavestats/Q/R = (GpeakSt,GpeakEnd) ROIDF
-				ValueSource[ScanNumber] = V_max
-				//Duplicate/O ROIDF, $(ScanName+"ROI"+ ROI)
-			
-				FindValue /V= (j) order
-				l = V_value+1
-			
-				st_pt = 1/Gbatchsize*(l-1)+.005  //divide the graph equally for the number of directions and space the plots for each direction.
-				end_pt = 1/Gbatchsize*l-.005
-	
-				k = order(l-1)
-				
-				tracename = scanName+"_ROI"+ ROI
-				If(cmpstr(channelMode[2],"1") == 0)
-					tracename = scanName+"_ROI"+ ROI + "_dGR"
-				EndIf
-				
-				axisname = "axis"+ tracename//axis handle
-				signals = "signal"+"_ROI"+ROI+"_"+"graph" // window handle
-			
-				DoWindow $signals
-				If(V_flag == 0) //if does not window exist
-					Display /N=$signals/B=$axisname ROIDF
-					//tag /A=MT /N=$TagName $axisname, 0, DirectionName
-					//TextBox/C/N=directions/A=MT " { 225 , 270 , 315 , 0 , 45 , 90 ,135 ,180 }" // Create textbox with order of directions
-				Else
-					If(strlen(TraceInfo(signals,NameOfWave(ROIDF),0)))
-						RemoveFromGraph/Z/W = $signals $NameOfWave(ROIDF)
-					EndIf
-					AppendToGraph/W = $signals /B=$axisname ROIDF
-				EndIf
-		
-				ModifyGraph/W = $signals  axisEnab($axisname)={st_pt,end_pt} //position graph
-				ModifyGraph/W = $signals  standoff=1,freePos($axisname)={0,left}
-				ModifyGraph/W = $signals  rgb($tracename) =(red,green,blue) // change color
-				ModifyGraph/W = $signals  margin(left)=35,margin(bottom)=28,margin(right)=7,margin(top)=7,gfSize=8,axThick=0.5,standoff=0
-				//Set axis to 0.2 ∆F/F
-				//SetAxis/W = $signals left -0.05,0.2 
-				If(cmpstr(channelMode[2],"1") == 0)
-					Label/W = $signals left,"∆G/R   \\E"
-				Else
-					Label/W = $signals left,"∆F/F   \\E"
-				EndIf
-			//Scan loop
-			EndFor
-		//Batch loop
-		EndFor
-	//ROI loop
-	EndFor
-	print report
-	SetDataFolder curFolder
-End
 
 //Recoded version of NMultiROI to keep style consistent
 Function GetROI()
@@ -1073,7 +542,6 @@ Function GetROI()
 	
 	//scan or browser mode?
 	SVAR whichList = root:Packages:analysisTools:whichList
-	SVAR selWaveList = root:Packages:MBr:selWaveList
 	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	
 	Variable numROIs,numScans,numFrames,doRatio,darkVal,darkVal2,bslnStart,bslnEnd,bsln,bsln2
@@ -1137,11 +605,8 @@ Function GetROI()
 	
 	numROIs = ItemsInList(ROIListStr,";")
 	
-	If(cmpstr(whichList,"AT") == 0)		
-		numScans = ItemsInList(scanListStr,";")
-	ElseIf(cmpstr(whichList,"Browser") == 0)
-		numScans = ItemsInList(selWaveList,";")
-	EndIf
+	numScans = ItemsInList(scanListStr,";")
+
 		
 	//Divided up by batch?
 	ControlInfo/W=analysis_tools BatchsizeVar
@@ -1158,36 +623,25 @@ Function GetROI()
 	//LOOP THROUGH SCANS
 		For(j=0;j<numScans;j+=1)
 			
-			//Scan Mode
-			If(cmpstr(whichList,"AT") == 0)
-				//Get the scan
-				theScanName = StringFromList(j,scanListStr,";")
+
+			//Get the scan
+			theScanName = StringFromList(j,scanListStr,";")
 			
-				If(doRatio)
-					//ratio
-					Wave/Z theScan = $("root:twoP_Scans:" + theScanName + ":" + theScanName + "_ch1")
-					Wave/Z theScan2 = $("root:twoP_Scans:" + theScanName + ":" + theScanName + "_ch2")
-				
-					//does channel 2 scan exist?
-					If(!WaveExists(theScan2))
-						DoAlert 0,"Couldn't find the scan: " + NameOfWave(theScan2)
-						continue
-					EndIf
-				Else
-					//single channel
-					Wave/Z theScan = $("root:twoP_Scans:" + theScanName + ":" + theScanName + "_" + channel)
+			If(doRatio)
+				//ratio
+				Wave/Z theScan = $("root:twoP_Scans:" + theScanName + ":" + theScanName + "_ch1")
+				Wave/Z theScan2 = $("root:twoP_Scans:" + theScanName + ":" + theScanName + "_ch2")
+			
+				//does channel 2 scan exist?
+				If(!WaveExists(theScan2))
+					DoAlert 0,"Couldn't find the scan: " + NameOfWave(theScan2)
+					continue
 				EndIf
-				
-			//Browser Mode
-			ElseIf(cmpstr(whichList,"Browser") == 0)
-				theScanName = StringFromList(j,selWaveList,";")
-				Wave/Z theScan = $(cdf + theScanName)
+			Else
+				//single channel
+				Wave/Z theScan = $("root:twoP_Scans:" + theScanName + ":" + theScanName + "_" + channel)
 			EndIf
-			
-			
-			//Wave theScan = root:twoP_Scans:Scan_000:dGR_avg_90DARK_RF
-			//theScanName = NameOfWave(theScan)
-			
+
 			//Does the scan exist?
 			If(!WaveExists(theScan))
 				DoAlert 0,"Couldn't find the scan: " + NameOfWave(theScan)
@@ -1295,8 +749,7 @@ Function GetROI()
 				EndIf
 				
 				//ROI mask wave				
-				ImageBoundaryToMask ywave=roiY,xwave=roiX,width=(DimSize(theScan,0)),height=(DimSize(theScan,1)),scalingwave=theScan,seedx=xSeed,seedy=ySeed
-				
+				ImageBoundaryToMask ywave=roiY,xwave=roiX,width=(DimSize(theScan,0)),height=(DimSize(theScan,1)),scalingwave=theScan,seedx=xSeed,seedy=ySeed			
 			
 				Wave ROIMask = $(ROIFolder + ":M_ROIMask")	
 				
@@ -1335,18 +788,12 @@ Function GetROI()
 				For(k=0;k<numFrames;k+=1)
 					ImageStats/M=1/P=(k)/R=ROImask theScan
 					RawROI[k] = V_avg
-					
-					//Make/O/N=(DimSize(RawROI,0)) $(NameOfWave(theScan) + "_orig")//,root:theROI_smooth
-					//Wave origROI = $(NameOfWave(theScan) + "_orig")
-				//	Wave smoothROI = root:theROI_smooth
-					
-				
+
 					If(doRatio)
 						ImageStats/M=1/P=(k)/R=ROImask theScan2
 						RawROI2[k] = V_avg
 					EndIf
-				EndFor
-				
+				EndFor			
 				
 				//Searches for single frame large values that are more likely instrument noise.
 				//Discovered values are set to the local mean
@@ -1360,15 +807,11 @@ Function GetROI()
 						RawROI[m] = localAvg
 					EndIf
 				EndFor
-				
-				//origROI = RawROI
 
 				If(TempFilter)
 					Smooth/S=2 (smoothSize), RawROI //Savitzky-Golay smoothing
 					SetScale/P x,DimOffset(theScan,2),DimDelta(theScan,2),RawROI
 					
-				//	smoothROI = RawROI
-				//SetScale/P x,DimOffset(theScan,2),DimDelta(theScan,2),origROI//,smoothROI
 					If(doRatio)
 						Smooth/S=2 (smoothSize), RawROI2
 						SetScale/P x,DimOffset(theScan2,2),DimDelta(theScan2,2),RawROI2
@@ -1385,17 +828,11 @@ Function GetROI()
 				//Get the baseline value of the trace
 				//Use median for the baseline, so it doesn't get pulled up or down from noisy values
 				bsln = median(RawROI,bslnStart,bslnEnd)
-				//print bsln
 				
 				//Get the red baseline for ratio
 				If(doRatio)
 					bsln2 = median(RawROI2,bslnStart,bslnEnd)
-				EndIf
-				
-			//	theScanName = ReplaceString(StringFromList(0,theScanName,"_"),theScanName,"CTRL")
-				//String replaceStr = ParseFilePath(1,theScanName,"_",1,0)
-				//theScanName = ReplaceString(replaceStr,theScanName,"_")
-				//theScanName = "Scan"
+				EndIf			
 				
 				//Make ∆F/F or ∆G/R waves
 				If(cmpstr(whichList,"AT") == 0)
@@ -1520,7 +957,7 @@ Function GetROI()
 								EndIf
 															
 								Make/FREE/N=(theSize) tempPeak
-								//Sort theOrderWave,peakDF
+
 								For(m=0;m<theSize;m+=1)
 									tempPeak[m] = peakDF[theOrderWave[m]]
 								EndFor
@@ -1575,7 +1012,6 @@ Function GetROI()
 					EndIf
 					
 					//clean up
-				//	KillWaves/Z ROIMask
 					KillWaves/Z avgImage,stdImage//,ROImaskTrim
 			EndFor	
 			counter += 1
@@ -1640,8 +1076,6 @@ Function avgROIWaves(ROIListStr,scanListStr,channel,scanSize)
 		SetScale/P x,DimOffset(theROIWave,0),DimDelta(theROIWave,0),avgDF
 	EndFor
 End
-
-
 
 
 //Called by getROI() to get the peak values of the ROIs
@@ -2501,173 +1935,6 @@ Function displayROIs()
 	
 	ModifyGraph margin(left)=28,margin(bottom)=28,margin(right)=7,margin(top)=7,gfSize=8,rgb=(0,0,0),axThick=0.5,standoff=0,btLen=2
 End
-
-
-//Averages the waves in the list
-Function/S avgSelectedWaves(selWaveList,avgORerr)
-	String selWaveList
-	Variable avgORerr	//0 for avg, 1 for sem, 2 for both
-	Variable numItems,i
-	String avgWaveName,errWaveName
-	
-	//Use clipboard waves?
-	NVAR useClipboard = root:Packages:MBr:useClipboard
-	Wave/T clipboardListWave = root:Packages:MBr:clipboardListWave
-	
-	If(DimSize(clipboardListWave,0) == 1 && strlen(clipboardListWave[0]) == 0)
-		useClipboard = 0
-	EndIf
-	
-	If(useClipboard)
-		selWaveList = ""
-		For(i=0;i<DimSize(clipboardListWave,0);i+=1)
-			selWaveList += clipboardListWave[i] + ";"
-		EndFor
-	EndIf
-	
-	numItems = ItemsInList(selWaveList,";")
-	SetDataFolder GetWavesDataFolder($StringFromList(0,selWaveList,";"),1)
-	
-	ControlInfo/W=analysis_tools outputSuffix
-	String suffix = S_Value
-	
-	ControlInfo/W=analysis_tools useDataSetCheck
-	Variable useDS = V_Value
-	
-	If(strlen(suffix))
-		If(avgORerr == 1)
-			avgWaveName = "avgWave"
-			errWaveName = StringFromList(0,selWaveList,";") + "_" + suffix
-		Else
-			avgWaveName = StringFromList(0,selWaveList,";") + "_" + suffix
-			errWaveName = StringFromList(0,selWaveList,";") + "_" + suffix
-		EndIf
-	Else
-		If(avgORerr == 1)
-			avgWaveName = "avgWave"
-			errWaveName = StringFromList(0,selWaveList,";") + "_sem"
-		Else
-			avgWaveName = StringFromList(0,selWaveList,";") + "_avg"
-			errWaveName = StringFromList(0,selWaveList,";") + "_sem"
-		EndIf
-	EndIf
-	
-	//Check wave name length
-	String shortName = ParseFilePath(0,avgWaveName,":",1,0)
-	If(strlen(shortName) > 31)
-		avgWaveName = ParseFilePath(1,avgWaveName,":",1,0) + shortName[0,30]
-	EndIf
-	
-	shortName = ParseFilePath(0,errWaveName,":",1,0)
-	If(strlen(shortName) > 31)
-		errWaveName = ParseFilePath(1,errWaveName,":",1,0) + shortName[0,30]
-	EndIf
-	
-	
-	If(DimSize($StringFromList(0,selWaveList,";"),2) > 0)
-	//3D
-		Make/O/N=(DimSize($StringFromList(0,selWaveList,";"),0),DimSize($StringFromList(0,selWaveList,";"),1),DimSize($StringFromList(0,selWaveList,";"),2)) $avgWaveName
-		
-		If(avgORerr == 1 || avgORerr == 2)
-			Make/O/N=(DimSize($StringFromList(0,selWaveList,";"),0),DimSize($StringFromList(0,selWaveList,";"),1),DimSize($StringFromList(0,selWaveList,";"),2)) $errWaveName
-		EndIf
-		
-		Wave/Z avgWave = $avgWaveName
-		Wave/Z errWave = $errWaveName
-		
-		SetScale/P x,DimOffset($StringFromList(0,selWaveList,";"),0),DimDelta($StringFromList(0,selWaveList,";"),0),avgWave
-		SetScale/P y,DimOffset($StringFromList(0,selWaveList,";"),1),DimDelta($StringFromList(0,selWaveList,";"),1),avgWave
-		SetScale/P z,DimOffset($StringFromList(0,selWaveList,";"),2),DimDelta($StringFromList(0,selWaveList,";"),2),avgWave
-
-		If(avgORerr == 1 || avgORerr == 2)
-			SetScale/P x,DimOffset($StringFromList(0,selWaveList,";"),0),DimDelta($StringFromList(0,selWaveList,";"),0),errWave
-			SetScale/P y,DimOffset($StringFromList(0,selWaveList,";"),1),DimDelta($StringFromList(0,selWaveList,";"),1),errWave
-			SetScale/P z,DimOffset($StringFromList(0,selWaveList,";"),2),DimDelta($StringFromList(0,selWaveList,";"),2),errWave
-		EndIf
-	ElseIf(DimSize($StringFromList(0,selWaveList,";"),1) > 0)
-	//2D
-		Make/O/N=(DimSize($StringFromList(0,selWaveList,";"),0),DimSize($StringFromList(0,selWaveList,";"),1)) $avgWaveName
-		If(avgORerr == 1 || avgORerr == 2)
-			Make/O/N=(DimSize($StringFromList(0,selWaveList,";"),0),DimSize($StringFromList(0,selWaveList,";"),1)) $errWaveName
-		EndIf
-		
-		Wave/Z avgWave = $avgWaveName
-		Wave/Z errWave = $errWaveName
-		
-		SetScale/P x,DimOffset($StringFromList(0,selWaveList,";"),0),DimDelta($StringFromList(0,selWaveList,";"),0),avgWave
-		SetScale/P y,DimOffset($StringFromList(0,selWaveList,";"),1),DimDelta($StringFromList(0,selWaveList,";"),1),avgWave
-		
-		If(avgORerr == 1 || avgORerr == 2)
-			SetScale/P x,DimOffset($StringFromList(0,selWaveList,";"),0),DimDelta($StringFromList(0,selWaveList,";"),0),errWave
-			SetScale/P y,DimOffset($StringFromList(0,selWaveList,";"),1),DimDelta($StringFromList(0,selWaveList,";"),1),errWave
-		EndIf
-	Else
-	//1D
-		Make/O/N=(DimSize($StringFromList(0,selWaveList,";"),0)) $avgWaveName
-		If(avgORerr == 1 || avgORerr == 2)
-			Make/O/N=(DimSize($StringFromList(0,selWaveList,";"),0)) $errWaveName
-		EndIf
-		
-		Wave/Z avgWave = $avgWaveName
-		Wave/Z errWave = $errWaveName
-		
-		SetScale/P x,DimOffset($StringFromList(0,selWaveList,";"),0),DimDelta($StringFromList(0,selWaveList,";"),0),avgWave
-		
-		If(avgORerr == 1 || avgORerr == 2)
-			SetScale/P x,DimOffset($StringFromList(0,selWaveList,";"),0),DimDelta($StringFromList(0,selWaveList,";"),0),errWave
-		EndIf
-	EndIf
-	
-	//AVG calculation
-	avgWave = 0
-
-	Note/K avgWave,num2str(numItems) + " Waves Averaged:"
-	For(i=0;i<numItems;i+=1)
-		Wave currentWave = $StringFromList(i,selWaveList,";")
-		avgWave += currentWave
-		Note avgWave,NameOfWave(currentWave)
-	EndFor
-	avgWave /= numItems	
-	
-	//SEM calculation
-	If(avgORerr == 1 || avgORerr == 2)
-		errWave = 0
-		Note/K errWave,num2str(numItems) + " Waves included:"
-		For(i=0;i<numItems;i+=1)
-			Wave currentWave = $StringFromList(i,selWaveList,";")
-			errWave += (currentWave - avgWave)^2
-			Note errWave,NameOfWave(currentWave)
-		EndFor
-		
-		errWave = (sqrt(errWave / (numItems -1)))/sqrt(numItems)
-	EndIf
-	
-	If(avgORerr == 1)
-		KillWaves/Z avgWave
-	EndIf
-End
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 Function/WAVE getDendriticMask([theWave,noBuffer])
 	Wave theWave
@@ -3655,7 +2922,7 @@ End
 
 
 //Perform a user defined operation between two waves
-Function doOperation()
+//Function doOperation()
 	Wave/T waveListTable = root:Packages:analysisTools:AT_waveListTable
 	SVAR scanListStr = root:Packages:twoP:examine:scanListStr
 	SVAR selWaveList = root:Packages:MBr:selWaveList
@@ -3708,7 +2975,7 @@ Function doOperation()
 			//average all waves
 			If(useDS)
 				theWaveList = GetDSWaveList(separator=";")
-				avgSelectedWaves(theWaveList,0)
+			//	avgSelectedWaves(theWaveList,0)
 			Else
 				If(cmpstr(whichList,"AT") == 0)
 					SetDataFolder $("root:twoP_Scans:" + StringFromList(0,scanListStr,";"))	//set to first waves data folder
