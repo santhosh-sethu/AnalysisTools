@@ -1398,7 +1398,7 @@ Function AppendDSWaveToViewer(selWave,itemList,dsWave,[fullPathList])
 			EndIf
 		EndFor
 		
-		For(i=0;i<ItemsInList(traceCheck,";");i+=1)
+		For(i=ItemsInList(traceCheck,";") - 1;i>-1;i-=1)//count down to correcty remove multiple trace instance numbers
 			If(cmpstr(StringFromList(i,traceCheck,";"),"0") != 0)
 				RemoveFromGraph/W=analysis_tools#atViewerGraph $StringFromList(i,traceCheck,";")
 			EndIf
@@ -1876,6 +1876,13 @@ Function/WAVE getWaveMatchList()
 	//Full path wave list table
 	Wave/T AT_WaveListTable_FullPath = root:Packages:analysisTools:AT_WaveListTable_FullPath
 	
+	//Relative folder path that will be added on to the current data folder
+	ControlInfo/W=analysis_tools relativeFolderMatch
+	String relFolder = S_Value
+	If(strlen(relFolder) > 0)
+		relFolder = ":" + relFolder
+	EndIf
+	
 	Variable items = ItemsInList(scanListStr,";")
 	Variable i
 	SVAR waveMatchStr = root:Packages:analysisTools:waveMatchStr
@@ -1906,7 +1913,7 @@ Function/WAVE getWaveMatchList()
 		String folderList = ""
 		For(i=0;i<DimSize(folderTable,0);i+=1)
 			If(selFolderWave[i] == 1)
-				folderList +=  cdf + folderTable[i] + ";"
+				folderList +=  cdf + folderTable[i] + relFolder + ";"
 			EndIf
 		EndFor
 		items = ItemsInList(folderList,";")

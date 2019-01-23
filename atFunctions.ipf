@@ -34,8 +34,12 @@ Function displayExtFuncHelp(theFunction)
 	print "----------------------------"
 End
 
-Function/WAVE GetFolderListItems()
+Function/WAVE GetFolderListItems([folderPath])
+	//if folderPath is provided, the folder list within folderPath is provided instead of the cdf
+	String folderPath
+	
 	Wave/Z/T folderTable = root:Packages:analysisTools:folderTable
+
 
 	Wave/T selFolderWave = root:Packages:analysisTools:selFolderWave
 	If(!WaveExists(folderTable))
@@ -47,7 +51,13 @@ Function/WAVE GetFolderListItems()
 	Variable i
 	
 	//Indexes waves in current data folder, applies match string
+	
 	cdf = GetDataFolder(1)
+	
+	If(!ParamIsDefault(folderPath))
+		SetDataFolder $folderPath
+	EndIf
+
 	String folderList = ReplaceString(";",StringFromList(1,DataFolderDir(1),":"),"")
 	folderList = TrimString(folderList)
 
@@ -57,10 +67,14 @@ Function/WAVE GetFolderListItems()
 	For(i=0;i<ItemsInList(folderList,",");i+=1)
 		folderTable[i] = StringFromList(i,folderList,",")
 	EndFor
+	SetDataFolder $cdf
+	
 	return folderTable
 End
 
-Function/WAVE GetFolderItems()
+Function/WAVE GetFolderItems([depth])
+	Variable depth //folder depth
+	
 	Wave/T waveListTable = root:Packages:analysisTools:itemListTable
 	Wave selWave = root:Packages:analysisTools:itemListSelWave
 	SVAR cdf = root:Packages:analysisTools:currentDataFolder
@@ -141,6 +155,7 @@ Function flipLists(whichList)
 			SetVariable AT_cdf win=analysis_tools#scanListPanel,disable=1
 			ListBox AT_FolderListBox win=analysis_tools#scanListPanel,size={140,500-65},pos={0,30},mode=4,listWave=folderTable,selWave=selFolderWave,proc=atListBoxProc,disable=1
 			ListBox AT_ItemListBox win=analysis_tools#scanListPanel,listWave=waveListTable,selWave=itemListSelWave,mode=4,size={80+75,500-65},proc=atListBoxProc,disable = 1
+			SetVariable folderDepth win=analysis_tools#scanListPanel,disable=1
 			
 			//Move the ROI list box back
 			ListBox ROIListBox win=analysis_tools#scanListPanel,pos={150,30}
@@ -177,7 +192,8 @@ Function flipLists(whichList)
 			Button atBrowseButton win=analysis_tools#scanListPanel,title="Scans"
 			SetVariable AT_cdf win=analysis_tools#scanListPanel,disable=2
 			Button atBrowseBackButton win=analysis_tools#scanListPanel,disable=0
-
+			SetVariable folderDepth win=analysis_tools#scanListPanel,disable=0
+			
 			//Change some control assignments
 			ListBox AT_FolderListBox win=analysis_tools#scanListPanel,size={140,500-65},pos={0,30},mode=4,listWave=folderTable,selWave=selFolderWave,proc=atListBoxProc,disable=0
 			ListBox AT_ItemListBox win=analysis_tools#scanListPanel,listWave=waveListTable,selWave=itemListSelWave,mode=4,size={80+100,500-65},pos={150,30},proc=atListBoxProc,disable = 0

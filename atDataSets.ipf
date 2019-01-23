@@ -111,6 +111,13 @@ Function addDataSet(dataSetName,[selection])
 	Wave/T dataSetNames = root:Packages:analysisTools:DataSets:dataSetNames
 	Wave dataSetSelWave = root:Packages:analysisTools:DataSets:dataSetSelWave
 	
+	//Relative folder path that will be added on to the current data folder
+	ControlInfo/W=analysis_tools relativeFolderMatch
+	String relFolder = S_Value
+	If(strlen(relFolder) > 0)
+		relFolder = ":" + relFolder
+	EndIf
+	
 	//Make the ds filter wave if it doesn't exist
 	If(!WaveExists(root:Packages:analysisTools:DataSets:dsFilters))
 		Make/O/T/N=(1,2) root:Packages:analysisTools:DataSets:dsFilters
@@ -202,7 +209,7 @@ Function addDataSet(dataSetName,[selection])
 							If(cmpstr(listWave[j],previousPath) == 0)
 								continue
 							EndIf
-							possiblePath = cdf + folderTable[i] + ":" + listWave[j]
+							possiblePath = cdf + folderTable[i] + relFolder + ":" + listWave[j]
 							If(WaveExists($possiblePath))	//is the wave in this folder?
 								fullPath += possiblePath + ";"
 								previousPath = listWave[j]

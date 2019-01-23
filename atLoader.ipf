@@ -13,11 +13,12 @@ End
 
 //Finds any external procedure files to include
 Function FindExternalModules()
-	String filepath,folders,platform
+	String filepath,helpPath,folders,platform
 	platform = IgorInfo(2)
 	
 	//What folder is the analysisTools.ipf in?
 	filepath = FunctionPath("FindExternalModules")
+	
 	If(cmpstr(platform,"Windows") == 0)
 		filepath = ParseFilePath(1,filepath,"\\",1,0) + "External Procedures"
 	ElseIf(cmpstr(platform,"Macintosh") == 0)
@@ -25,7 +26,7 @@ Function FindExternalModules()
 	EndIf
 	
 	NewPath/Q/Z/C/O IgorProcPath,filepath
-
+	
 	String/G root:Packages:analysisTools:fileList
 	SVAR fileList = root:Packages:analysisTools:fileList
 	
@@ -61,7 +62,8 @@ Function LoadAnalysisSuite([left,top])
 	If(ParamIsDefault(top))
 		top = 0
 	EndIf
-
+	
+	
 	// Make the panel//////////
 	DoWindow analysis_tools
 	if(V_flag !=0)
@@ -280,32 +282,11 @@ Function LoadAnalysisSuite([left,top])
 	SVAR arrangementOptions = root:Packages:analysisTools:arrangementOptions
 	arrangementOptions = "None;Index;ROI"
 	
-	//Build the Tab control
-	SVAR tabList = root:Packages:analysisTools:tabList
-	
-	///TAB LIST - semi-colon separated list of the tab names.
-	//Just add another entry to the list to make a new tab.
-	tabList = "Analysis"
-	
-	Make/O/N=(ItemsInList(tabList,";")) root:Packages:analysisTools:controlHeight
-	Wave controlHeight = root:Packages:analysisTools:controlHeight
 	//Add the names of your controls to the appropriate list to assign controls to that tab.
 	//Assignment allows the tab to automatically hide or show controls assigned to that tab when it gets clicked. 
 	//Make sure the name of a new control list is with format: 'ctrlList_' + 'name of control'
 	
 	CreateControlLists(cmdList)
-	
-	//New tab control lists...
-	
-	SVAR prevTab = root:Packages:analysisTools:prevTab
-	SVAR currentTab = root:Packages:analysisTools:currentTab
-	currentTab = StringFromList(0,tabList,";")
-	prevTab = ""
-	
-	TabControl atTab win=analysis_tools,proc=atTabProc
-	For(i=0;i<ItemsInList(tabList,";");i+=1)
-		TabControl atTab win=analysis_tools,tabLabel(i) = StringFromList(i,tabList,";"),size={width-235,20}
-	EndFor
 	
 	String/G root:Packages:analysisTools:selWaveList
 	SVAR selWaveList = root:Packages:analysisTools:selWaveList
@@ -326,7 +307,7 @@ Function LoadAnalysisSuite([left,top])
 	ModifyPanel/W=analysis_tools#scanListPanel frameStyle=0
 	ListBox/Z WaveListBox win=analysis_tools#scanListPanel,size={140,500-65},pos={0,30},mode=4,selWave=selWave,listWave=scanListWave,proc=atListBoxProc
 	Button selectAll_Left win=analysis_tools#scanListPanel,size={30,20},pos={0,height-40},title="ALL",proc=atButtonProc 
-	
+	SetVariable folderDepth win=analysis_tools#scanListPanel,size={80,20},pos={40,height-38},fsize=12,limits={0,inf,1},value=_NUM:0,disable=1,title="Depth",proc=atSetVarProc
 	
 	//ROI list Panel
 	ListBox/Z ROIListBox win=analysis_tools#scanListPanel,size={80,height-75},pos={150,30},mode=4,selWave=ROIListSelWave,listWave=ROIListWave,proc=atListBoxProc
@@ -355,9 +336,9 @@ Function LoadAnalysisSuite([left,top])
 	cdf = GetDataFolder(1)
 	SetVariable AT_cdf win=analysis_tools#scanListPanel,pos={100,8},size={200,20},fsize=10,value=cdf,title=" ",disable=1,frame=0
 	
-	PopUpMenu AT_CommandPop win=analysis_tools,pos={80,35},size={125,20},fsize=12, title="Command:",bodywidth=125,value=#"root:Packages:analysisTools:cmdList",mode=1,proc=atPopProc
-	Button AT_RunCmd win=analysis_tools,pos={260,34},size={50,20},title="Run",proc=atButtonProc
-	Button AT_Help win=analysis_tools,pos={210,34},size={20,20},title="?",proc=atButtonProc
+	PopUpMenu AT_CommandPop win=analysis_tools,pos={80,6},size={125,20},fsize=12, title="Command:",bodywidth=125,value=#"root:Packages:analysisTools:cmdList",mode=1,proc=atPopProc
+	Button AT_RunCmd win=analysis_tools,pos={260,5},size={50,20},title="Run",proc=atButtonProc
+	Button AT_Help win=analysis_tools,pos={210,5},size={20,20},title="?",proc=atButtonProc
 	GroupBox AT_HelpBox win=analysis_tools,pos={7,269},size={326,200},disable=1
 	
 	//Variables
@@ -408,9 +389,12 @@ Function LoadAnalysisSuite([left,top])
 	PopUpMenu maskListPopUp win=analysis_tools,pos={10,85},size={150,20},title="Masks",value=GetMaskWaveList(),disable=1
 	
 	//For Operation
+	
+	SetVariable waveMatch win=analysis_tools,pos={40,40},size={162,20},fsize=10,title="Match",value=_STR:"*",disable=1,proc=atSetVarProc
+	SetVariable waveNotMatch win=analysis_tools,pos={52,60},size={150,20},fsize=10,title="Not",value=_STR:"",disable=1,proc=atSetVarProc
+	SetVariable relativeFolderMatch win=analysis_tools,pos={35,80},size={167,20},fsize=10,title=":Folder",value=_STR:"",disable=1,proc=atSetVarProc
 	getWaveMatchList()
-	SetVariable waveMatch win=analysis_tools,pos={80,62},size={150,20},title="Match",value=_STR:"*",disable=1,proc=atSetVarProc
-	SetVariable waveNotMatch win=analysis_tools,pos={80,82},size={150,20},title="Not",value=_STR:"",disable=1,proc=atSetVarProc
+	
 	ListBox matchListBox win=analysis_tools,pos={5,120},size={225,320},mode=4,listWave=AT_waveListTable,selWave=AT_selWave,disable=1,proc=atListBoxProc
 	SetVariable operation win=analysis_tools,pos={80,469},size={255,20},title="Operation",value=_STR:"",disable=1
 	SetVariable outputSuffix win=analysis_tools,pos={80,450},size={150,20},title="Output Suffix",value=_STR:"",disable=1
@@ -448,8 +432,8 @@ Function LoadAnalysisSuite([left,top])
 	Button addDataSetFromSelection win=analysis_tools,pos={234,460},size={100,20},title="Add Selection",disable=1,proc=atButtonProc
 	Button delDataSet win=analysis_tools,pos={234,480},size={100,20},title="Del Data Set",disable=1,proc=atButtonProc
 	SetVariable dataSetName win=analysis_tools,pos={80,451},size={130,20},title="DS Name",disable=1,value=_STR:"NewDS"
-	Button matchStraddOR win=analysis_tools,pos={230,59},size={22,20},title="OR",fsize=8,disable=1,proc=atButtonProc
-	Button notMatchStraddOR win=analysis_tools,pos={230,79},size={22,20},title="OR",fsize=8,disable=1,proc=atButtonProc
+	Button matchStraddOR win=analysis_tools,pos={202,38},size={22,20},title="OR",fsize=8,disable=1,proc=atButtonProc
+	Button notMatchStraddOR win=analysis_tools,pos={202,58},size={22,20},title="OR",fsize=8,disable=1,proc=atButtonProc
 	SetVariable waveGrouping win=analysis_tools,pos={80,471},size={130,20},title="Grouping",disable=1,value=_STR:"",proc=atSetVarProc
 	
 	SetVariable prefixGroup win=analysis_tools,pos={10,491},size={40,20},title="P",disable=1,value=_STR:"",proc=atSetVarProc
@@ -478,7 +462,7 @@ Function LoadAnalysisSuite([left,top])
 	
 	PopUpMenu extFuncDS win=analysis_tools,pos={21,90},size={150,20},title="Waves",fSize=12,disable=1,value=#"root:Packages:analysisTools:DSNames",proc=atPopProc
 	PopUpMenu extFuncChannelPop win=analysis_tools,pos={175,90},size={100,20},fsize=12,title="CH",value="1;2",disable=1
-	Button extFuncHelp win=analysis_tools,pos={209,66},size={20,20},title="?",disable=1,proc=atButtonProc
+	Button extFuncHelp win=analysis_tools,pos={2,66},size={15,20},title="?",disable=1,proc=atButtonProc
 	
 	Make/N=0/T/O root:Packages:analysisTools:emptyWave
 	Wave/T emptyWave = root:Packages:analysisTools:emptyWave
@@ -697,7 +681,7 @@ Function CreateControlLists(cmdList)
 	//Data Sets
 	String/G root:Packages:analysisTools:ctrlList_dataSets
 	SVAR ctrlList_dataSets = root:Packages:analysisTools:ctrlList_dataSets
-	ctrlList_dataSets = "waveMatch;waveNotMatch;matchListBox;dataSetListBox;addDataSet;dataSetName;delDataSet;"
+	ctrlList_dataSets = "waveMatch;waveNotMatch;relativeFolderMatch;matchListBox;dataSetListBox;addDataSet;dataSetName;delDataSet;"
 	ctrlList_dataSets += "waveGrouping;addDataSetFromSelection;matchStraddOR;notMatchStraddOR;"
 	ctrlList_dataSets += "prefixGroup;GroupGroup;SeriesGroup;SweepGroup;TraceGroup"
 	//Get Peak Times

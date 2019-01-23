@@ -160,8 +160,12 @@ Function atButtonProc(ba) : ButtonControl
 					applyLineProfile()
 					break
 				case "AT_Help":
+					//ControlInfo/W=analysis_tools AT_CommandPop
+					//AT_DisplayHelpMessage(S_Value)
 					ControlInfo/W=analysis_tools AT_CommandPop
-					AT_DisplayHelpMessage(S_Value)
+					If(!cmpstr(S_Value,"Data Sets"))
+						DisplayHelpTopic "Data Sets"
+					EndIf
 					break
 				case "extFuncHelp":
 					ControlInfo/W=analysis_tools extFuncPopUp
@@ -363,13 +367,16 @@ Function atListBoxProc(lba) : ListBoxControl
 		case 3: // double click
 			strswitch(lba.ctrlName)
 				case "AT_FolderListBox":
+					ControlInfo/W=analysis_tools folderDepth
+					Variable depth = V_Value
+					
 					If(row > DimSize(listWave,0)-1)
 						break
 					EndIf
 					cdf = cdf + listWave[row] + ":"
 					SetDataFolder cdf
 					GetFolderListItems()
-					GetFolderItems()
+					GetFolderItems(depth=depth)
 					ControlUpdate AT_cdf
 					break
 				case "WaveListBox":
@@ -866,6 +873,15 @@ Function atSetVarProc(sva) : SetVariableControl
 					fillFilterTable()
 					updateWSDimText()				
 				
+					break
+					
+				case "relativeFolderMatch":
+					//Remove selection from the data set box
+					ListBox dataSetListBox win=analysis_tools,selRow=-1
+					clearFilterSet()
+					getWaveMatchList()
+					fillFilterTable()
+					updateWSDimText()	
 					break
 				case "waveGrouping":			
 					String dataSetName= whichDataSet()
