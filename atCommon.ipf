@@ -1387,7 +1387,11 @@ Function AppendDSWaveToViewer(selWave,itemList,dsWave,[fullPathList])
 		EndFor	
 		//Append selected traces
 		For(i=0;i<ItemsInList(dsWaveList,";");i+=1)
-			AppendToGraph/W=analysis_tools#atViewerGraph $StringFromList(i,dsWaveList,";")
+			If(WaveType($StringFromList(i,dsWaveList,";"),1) == 2)
+				continue //text wave
+			Else
+				AppendToGraph/W=analysis_tools#atViewerGraph $StringFromList(i,dsWaveList,";")
+			EndIf
 		EndFor
 	EndIf
 End
@@ -3328,7 +3332,11 @@ Function AppendToViewer(itemList)
 		EndFor	
 		//Append selected traces
 		For(i=0;i<ItemsInList(itemList,";");i+=1)
-			AppendToGraph/W=analysis_tools#atViewerGraph $(cdf + StringFromList(i,itemList,";"))
+			If(WaveType($(cdf + StringFromList(i,itemList,";")),1) == 2)
+				continue //text wave
+			Else
+				AppendToGraph/W=analysis_tools#atViewerGraph $(cdf + StringFromList(i,itemList,";"))
+			EndIf
 		EndFor
 	EndIf	
 End

@@ -874,8 +874,11 @@ Function atSetVarProc(sva) : SetVariableControl
 					If(!strlen(dataSetName))
 						//Save the wave list table prior to grouping again, ensures its correct
 						Wave/T/Z ds = root:Packages:analysisTools:AT_WaveListTable_FullPath
-						Duplicate/T/O ds,root:Packages:analysisTools:DataSets:ogAT_WaveListTable_FullPath
+						Duplicate/T/O ds,root:Packages:analysisTools:DataSets:ogAT_WaveListTable_FullPath,root:Packages:analysisTools:DataSets:ogAT_WaveListTable_UnGroup
 					EndIf
+					
+					SetDataFolder $df
+					
 					break
 				case "waveNotMatch":
 					SVAR waveNotMatchStr = root:Packages:analysisTools:waveNotMatchStr
@@ -893,9 +896,9 @@ Function atSetVarProc(sva) : SetVariableControl
 					If(!strlen(dataSetName))
 						//Save the wave list table prior to grouping again, ensures its correct
 						Wave/T/Z ds = root:Packages:analysisTools:AT_WaveListTable_FullPath
-						Duplicate/T/O ds,root:Packages:analysisTools:DataSets:ogAT_WaveListTable_FullPath
+						Duplicate/T/O ds,root:Packages:analysisTools:DataSets:ogAT_WaveListTable_FullPath,root:Packages:analysisTools:DataSets:ogAT_WaveListTable_UnGroup
 					EndIf
-			
+
 					SetDataFolder $df
 					break
 					
@@ -912,9 +915,10 @@ Function atSetVarProc(sva) : SetVariableControl
 					If(!strlen(dataSetName))
 						//Save the wave list table prior to grouping again, ensures its correct
 						Wave/T/Z ds = root:Packages:analysisTools:AT_WaveListTable_FullPath
-						Duplicate/T/O ds,root:Packages:analysisTools:DataSets:ogAT_WaveListTable_FullPath
+						Duplicate/T/O ds,root:Packages:analysisTools:DataSets:ogAT_WaveListTable_FullPath,root:Packages:analysisTools:DataSets:ogAT_WaveListTable_UnGroup
 					EndIf
-					
+
+					SetDataFolder $df
 					break
 				case "prefixGroup":
 				case "groupGroup":

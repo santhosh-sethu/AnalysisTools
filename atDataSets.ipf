@@ -153,6 +153,9 @@ Function addDataSet(dataSetName,[selection])
 		
 		
 		//Full paths of the waves in the match list box, ungrouped
+		If(!WaveExists(root:Packages:analysisTools:DataSets:ogAT_WaveListTable_UnGroup))
+			Make/T/O/N=1 root:Packages:analysisTools:DataSets:ogAT_WaveListTable_UnGroup
+		EndIf
 		Wave/T fullPathTable = root:Packages:analysisTools:DataSets:ogAT_WaveListTable_UnGroup
 		
 		//Make new text wave to hold the data set wave names
