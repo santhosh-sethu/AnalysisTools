@@ -1313,7 +1313,7 @@ Function/S getScanListItems(channel)
 	return theWaveList
 End
 
-//Appends selected traces to the Viewer graph
+//Appends selected traces from a data set to the Viewer graph
 Function AppendDSWaveToViewer(selWave,itemList,dsWave,[fullPathList])
 	Wave selWave
 	String itemList
@@ -1332,6 +1332,7 @@ Function AppendDSWaveToViewer(selWave,itemList,dsWave,[fullPathList])
 	SVAR cdf = root:Packages:analysisTools:currentDataFolder
 	String fullPath = ""
 	Variable count = 0
+	
 	//If length of dsWave and selWave don't match, assume it need
 	//to use the matchList from selected folders
 	If(DimSize(selWave,0) != DimSize(dsWave,0))
@@ -3310,6 +3311,7 @@ Function closeViewer()
 	viewerOpen = 0
 End
 
+//Appends selected waves in the Browser item list box to the Viewer graph
 Function AppendToViewer(itemList)
 	String itemList
 	SVAR cdf = root:Packages:analysisTools:currentDataFolder
@@ -3320,31 +3322,15 @@ Function AppendToViewer(itemList)
 	//Does the window exist?
 	If(V_flag)
 		String traceList = TraceNameList("analysis_tools#atViewerGraph",";",1)
-		String traceCheck = traceList
-	
+		//Remove all traces
+		For(i=ItemsInList(traceList)-1;i>-1;i-=1)
+			RemoveFromGraph/Z/W=analysis_tools#atViewerGraph $StringFromList(i,traceList,";")
+		EndFor	
+		//Append selected traces
 		For(i=0;i<ItemsInList(itemList,";");i+=1)
-			//Is it a numeric wave?
-			type = WaveType($(cdf + StringFromList(i,itemList,";")),1)
-			
-			If(type == 1)
-				//Is it already on the graph?
-				Variable isOnGraph = WhichListItem(StringFromList(i,itemList,";"),traceList,";")
-				If(isOnGraph == -1)
-					AppendToGraph/W=analysis_tools#atViewerGraph $(cdf + StringFromList(i,itemList,";"))
-				Else
-					traceCheck = RemoveListItem(i,traceCheck,";")
-					traceCheck = AddListItem("0",traceCheck,";",i)
-				EndIf
-			EndIf
+			AppendToGraph/W=analysis_tools#atViewerGraph $(cdf + StringFromList(i,itemList,";"))
 		EndFor
-		
-		For(i=0;i<ItemsInList(traceCheck,";");i+=1)
-			If(cmpstr(StringFromList(i,traceCheck,";"),"0") != 0)
-				RemoveFromGraph/W=analysis_tools#atViewerGraph $StringFromList(i,traceCheck,";")
-			EndIf
-		EndFor
-		
-	EndIf
+	EndIf	
 End
 
 Function SeparateTraces(orientation)

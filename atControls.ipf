@@ -139,6 +139,9 @@ Function atButtonProc(ba) : ButtonControl
 					NudgeROI()
 					break
 				case "selectAll_Left":
+					//select all scans,ROIs,folders, or wave items
+					selectALL(ba.ctrlName,whichList)
+					break
 				case "selectAll_Right":
 					Wave selWave = root:Packages:analysisTools:itemListSelWave
 					Wave/T listWave = root:Packages:analysisTools:itemListTable
