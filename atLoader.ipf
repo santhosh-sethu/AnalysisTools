@@ -20,12 +20,8 @@ Function FindExternalModules()
 	//What folder is the analysisTools.ipf in?
 	filepath = FunctionPath("FindExternalModules")
 	
-	If(cmpstr(platform,"Windows") == 0)
-		filepath = ParseFilePath(1,filepath,"\\",1,0) + "External Procedures"
-	ElseIf(cmpstr(platform,"Macintosh") == 0)
-		filepath = ParseFilePath(1,filepath,":",1,0) + "External Procedures"
-	EndIf
-	
+	filepath = ParseFilePath(1,filepath,":",1,0) + "External Procedures"
+
 	NewPath/Q/Z/C/O IgorProcPath,filepath
 	
 	String/G root:Packages:analysisTools:fileList
