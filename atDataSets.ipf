@@ -343,11 +343,19 @@ Function updateWSFilters()
 	
 	size = DimSize(dsFilters,0)
 	For(i=0;i<size;i+=1)
+		//If no filter assignment is there, back compatability
+		If(strlen(dsFilters[i][0]) == 0)
+			dsFilters[i][0] = dataSetNames[i]
+			dsFilters[i][1] = ";;;;;;;;"
+		EndIf
+		
 		If(!cmpstr(dsFilters[i][0],dsName))
 			filters = dsFilters[i][1]
 			break
 		EndIf
 	EndFor
+	
+	
 	
 	//wave grouping variable
 	SetVariable waveGrouping win=analysis_tools,value=_STR:StringFromList(2,filters,";")
