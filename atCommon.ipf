@@ -1312,12 +1312,14 @@ Function/S getScanListItems(channel)
 	theWaveList = RemoveEnding(theWaveList,";")
 	return theWaveList
 End
+
+//Appends selected traces to the Viewer graph
 Function AppendDSWaveToViewer(selWave,itemList,dsWave,[fullPathList])
 	Wave selWave
 	String itemList
 	Wave/T dsWave
 	Variable fullPathList
-	Variable i,j,type
+	Variable i,j,k,type
 	String dsWaveList = ""
 	
 	If(ParamIsDefault(fullPathList))
@@ -1378,42 +1380,13 @@ Function AppendDSWaveToViewer(selWave,itemList,dsWave,[fullPathList])
 	
 	If(V_flag)
 		String traceList = TraceNameList("analysis_tools#atViewerGraph",";",1)
-		String fullPathTraceList = ""
-		String traceCheck = traceList
-		
-		//Get full path for the traces, so it can handle duplicate trace names
-		For(i=0;i<ItemsInList(traceList,";");i+=1)
-			String fullTracePath = GetWavesDataFolder(TraceNameToWaveRef("analysis_tools#atViewerGraph",StringFromList(i,traceList,";")),2)
-			fullPathTraceList += fullTracePath + ";"
-		EndFor
-		
-		String dsList = TableToList(dsWave,";")
-		
-		For(i=ItemsInList(dsList,";") - 1;i>-1;i-=1)	//count down to correctly remove duplicate instances
-			//Is it a numeric wave?
-			String trace = StringFromList(i,dsList,";")		
-				
-			type = WaveType($StringFromList(i,dsList,";"),1)
-			If(type == 1)
-				//should it be on the graph?
-				Variable index = WhichListItem(trace,dsWaveList,";")
-				
-				If(index == -1) //NO
-					//Is it on the graph?
-					Variable isOnGraph = WhichListItem(trace,fullPathTraceList,";")
-					If(isOnGraph != -1)
-						//remove if it is on the graph
-						RemoveFromGraph/W=analysis_tools#atViewerGraph $StringFromList(isOnGraph,traceList,";")
-					EndIf
-				Else //YES
-					//Is it on the graph?
-					isOnGraph = WhichListItem(trace,fullPathTraceList,";")
-					If(isOnGraph == -1)
-					//Append if it should be on the graph and isn't
-						AppendToGraph/W=analysis_tools#atViewerGraph $StringFromList(i,dsList,";")
-					EndIf
-				EndIf
-			EndIf
+		//Remove all traces
+		For(i=ItemsInList(traceList)-1;i>-1;i-=1)
+			RemoveFromGraph/Z/W=analysis_tools#atViewerGraph $StringFromList(i,traceList,";")
+		EndFor	
+		//Append selected traces
+		For(i=0;i<ItemsInList(dsWaveList,";");i+=1)
+			AppendToGraph/W=analysis_tools#atViewerGraph $StringFromList(i,dsWaveList,";")
 		EndFor
 	EndIf
 End
