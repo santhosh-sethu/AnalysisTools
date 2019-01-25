@@ -4,6 +4,7 @@
 #include "atControls"
 #include "atCommon"
 #include "atDataSets"
+#include "ABF_Loader"
 
 Menu "Data", dynamic
 	Submenu "Packages"
