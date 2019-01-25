@@ -585,6 +585,7 @@ Function atListBoxProc(lba) : ListBoxControl
 						Wave/T theDataSet = $("root:Packages:analysisTools:DataSets:DS_" + S_Value)
 						
 						AppendDSWaveToViewer(selWave,selWaveList,theDataSet)
+						break
 				case "AT_ItemListBox":	
 					selWaveList = ""
 					For(i=0;i<DimSize(listWave,0);i+=1)
