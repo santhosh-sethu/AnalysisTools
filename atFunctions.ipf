@@ -5086,3 +5086,21 @@ Function AT_KillWaves()
 	
 	SetDataFolder $df
 End
+
+Function FlattenWave(inputWave)
+	wave inputWave
+	
+//	Make/N=(DimSize(inputWave,0)) fitWave
+	SetDataFolder GetWavesDataFolder(inputWave,1)
+	Make/O/D/N=0 coefs
+	Duplicate/O inputWave,filtered
+	FilterFIR/DIM=0/HI={0.006,0.01,101}/COEF coefs, filtered
+	Wave filterWave = filtered
+	inputWave = filterWave
+//	CurveFit/Q/M=2/W=0 poly_XOffset 10,inputWave/D=fitWave 	
+	//inputWave -= fitWave
+//	Note inputWave,"Trend Fitted"
+	//KillWaves fitWave
+	
+	KillWaves filterWave
+End
