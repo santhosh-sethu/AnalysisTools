@@ -59,7 +59,9 @@ Function LoadAnalysisSuite([left,top])
 	If(ParamIsDefault(top))
 		top = 0
 	EndIf
+		
 	
+		
 	
 	// Make the panel//////////
 	DoWindow analysis_tools
@@ -948,7 +950,13 @@ Function ChangeControls(currentCmd,prevCmd)
 	For(i=0;i<ItemsInList(ctrlList,";");i+=1)
 		ControlInfo/W=analysis_tools $StringFromList(i,ctrlList)
 		cmdStr = TrimString(StringFromList(0,S_Recreation,","))
-		cmdStr += " win=analysis_tools,disable = 0"
+		
+		String os = IgorInfo(2)
+		If(!cmpstr(os,"Macintosh"))
+			cmdStr += " win=analysis_tools,disable = 0"
+		ElseIf(!cmpstr(os,"Windows"))
+			cmdStr += " win=analysis_tools,disable = 0,fsize=10"
+		EndIf
 		
 		If(StringMatch(cmdStr,"*ch1Check*") && cmpstr("Adjust Galvo Distortion",currentCmd) == 0)
 			CheckBox ch1Check,win=analysis_tools,pos={34,264}
