@@ -258,13 +258,13 @@ Function atButtonProc(ba) : ButtonControl
 						ListBox dataSetListBox win=analysis_tools,selRow=V_Value-1
 						index = V_Value - 1
 						Wave/T dataSetWave = $("root:Packages:analysisTools:DataSets:DS_" + listWave[index])
+						checkMissingWaves(listWave[index])
 					EndIf
 					
 					
 					//update the list box to show the newly selected data set
 					UpdateDSListBox(dataSetWave)
 					
-					checkMissingWaves(listWave[index])
 					updateWSDimText()
 					updateWSFilters()
 					break

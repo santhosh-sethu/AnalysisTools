@@ -336,6 +336,9 @@ Function updateWSFilters()
 	String filters,dsName
 	
 	ControlInfo/W=analysis_tools dataSetListBox
+	If(DimSize(dataSetNames,0) == 0)
+		return -1
+	EndIf
 	dsName = dataSetNames[V_Value]
 	
 	size = DimSize(dsFilters,0)
