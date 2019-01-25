@@ -1378,32 +1378,43 @@ Function AppendDSWaveToViewer(selWave,itemList,dsWave,[fullPathList])
 	
 	If(V_flag)
 		String traceList = TraceNameList("analysis_tools#atViewerGraph",";",1)
+		String fullPathTraceList = ""
 		String traceCheck = traceList
 		
-		For(i=0;i<ItemsInList(itemList,";");i+=1)
+		//Get full path for the traces, so it can handle duplicate trace names
+		For(i=0;i<ItemsInList(traceList,";");i+=1)
+			String fullTracePath = GetWavesDataFolder(TraceNameToWaveRef("analysis_tools#atViewerGraph",StringFromList(i,traceList,";")),2)
+			fullPathTraceList += fullTracePath + ";"
+		EndFor
+		
+		String dsList = TableToList(dsWave,";")
+		
+		For(i=ItemsInList(dsList,";") - 1;i>-1;i-=1)	//count down to correctly remove duplicate instances
 			//Is it a numeric wave?
-			String trace = StringFromList(i,itemList,";")		
+			String trace = StringFromList(i,dsList,";")		
 				
-			type = WaveType($StringFromList(i,dsWaveList,";"),1)
+			type = WaveType($StringFromList(i,dsList,";"),1)
 			If(type == 1)
-				//Is it already on the graph?
-				Variable isOnGraph = WhichListItem(trace,traceList,";")
-				If(isOnGraph == -1)
+				//should it be on the graph?
+				Variable index = WhichListItem(trace,dsWaveList,";")
 				
-					AppendToGraph/W=analysis_tools#atViewerGraph $StringFromList(i,dsWaveList,";")
-				Else
-					traceCheck = RemoveListItem(i,traceCheck,";")
-					traceCheck = AddListItem("0",traceCheck,";",i)
+				If(index == -1) //NO
+					//Is it on the graph?
+					Variable isOnGraph = WhichListItem(trace,fullPathTraceList,";")
+					If(isOnGraph != -1)
+						//remove if it is on the graph
+						RemoveFromGraph/W=analysis_tools#atViewerGraph $StringFromList(isOnGraph,traceList,";")
+					EndIf
+				Else //YES
+					//Is it on the graph?
+					isOnGraph = WhichListItem(trace,fullPathTraceList,";")
+					If(isOnGraph == -1)
+					//Append if it should be on the graph and isn't
+						AppendToGraph/W=analysis_tools#atViewerGraph $StringFromList(i,dsList,";")
+					EndIf
 				EndIf
 			EndIf
 		EndFor
-		
-		For(i=ItemsInList(traceCheck,";") - 1;i>-1;i-=1)//count down to correcty remove multiple trace instance numbers
-			If(cmpstr(StringFromList(i,traceCheck,";"),"0") != 0)
-				RemoveFromGraph/W=analysis_tools#atViewerGraph $StringFromList(i,traceCheck,";")
-			EndIf
-		EndFor
-		
 	EndIf
 End
 
@@ -3428,7 +3439,7 @@ Function clearTraces()
 	Variable numTraces = ItemsInList(traceList,";")
 	Variable i
 	
-	For(i=0;i<numTraces;i+=1)
+	For(i=numTraces - 1;i>-1;i-=1)
 		String theTrace = StringFromList(i,traceList,";")
 		RemoveFromGraph/W=analysis_tools#atViewerGraph $theTrace
 	EndFor	

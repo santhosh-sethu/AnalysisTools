@@ -254,9 +254,10 @@ Function atButtonProc(ba) : ButtonControl
 					Else
 						ListBox dataSetListBox win=analysis_tools,selRow=V_Value-1
 						index = V_Value - 1
+						Wave/T dataSetWave = $("root:Packages:analysisTools:DataSets:DS_" + listWave[index])
 					EndIf
 					
-					Wave/T dataSetWave = $("root:Packages:analysisTools:DataSets:DS_" + listWave[index])
+					
 					//update the list box to show the newly selected data set
 					UpdateDSListBox(dataSetWave)
 					
@@ -537,7 +538,10 @@ Function atListBoxProc(lba) : ListBoxControl
 								AppendToGraph/W=analysis_tools#atViewerGraph theWave
 							EndIf
 						EndFor
-					
+						
+						//select all
+						Wave/Z selWave = root:Packages:analysisTools:AT_SelWave
+						selWave = 1
 					break
 			endswitch
 			break
@@ -639,7 +643,7 @@ Function atListBoxProc(lba) : ListBoxControl
 					AppendDSWaveToViewer(selWave,selWaveList,theDataSet,fullPathList=fullPathList)
 					break
 				case "matchListBox":
-					Wave/T listWave = root:Packages:analysisTools:AT_waveListTable
+					Wave/T listWave = root:Packages:analysisTools:AT_WaveListTable
 					Wave selWave = root:Packages:analysisTools:AT_selWave
 					
 					dsName = whichDataSet()
@@ -652,15 +656,14 @@ Function atListBoxProc(lba) : ListBoxControl
 					fullPathList = 0
 					
 					selWaveList = ""
-					For(i=0;i<DimSize(listWave,0);i+=1)
+					For(i=0;i<DimSize(theDataSet,0);i+=1)
 						If(selWave[i] == 1)
-							selWaveList += listWave[i] + ";"
+							selWaveList += theDataSet[i] + ";"
 						
 							//If we hit a waveset label
-							If(stringmatch(listWave[i],"*WSN*"))
-								index = tableMatch(listWave[i],theDataSet)
-								selWaveList = ReplaceString(listWave[i] + ";",selWaveList,"")	//remove the wsLabel from the list
-								selWaveList += getWaveSet(dsName,wsLabel=listWave[i])	//add in the entire waveset to the list
+							If(stringmatch(theDataSet[i],"*WSN*"))
+								selWaveList = ReplaceString(theDataSet[i] + ";",selWaveList,"")	//remove the wsLabel from the list
+								selWaveList += getWaveSet(dsName,wsLabel=theDataSet[i])	//add in the entire waveset to the list
 								fullPathList = 1
 							EndIf
 						EndIf
@@ -852,6 +855,9 @@ Function atSetVarProc(sva) : SetVariableControl
 				case "waveMatch":
 					SVAR waveMatchStr = root:Packages:analysisTools:waveMatchStr
 					waveMatchStr = sval
+					String dataSetName= whichDataSet()
+					
+					String df = GetDataFolder(1)
 					
 					//Remove selection from the data set box
 					ListBox dataSetListBox win=analysis_tools,selRow=-1
@@ -860,93 +866,110 @@ Function atSetVarProc(sva) : SetVariableControl
 					getWaveMatchList()
 					fillFilterTable()
 					updateWSDimText()
+					SetDataFolder $df
 					
+					If(!strlen(dataSetName))
+						//Save the wave list table prior to grouping again, ensures its correct
+						Wave/T/Z ds = root:Packages:analysisTools:AT_WaveListTable_FullPath
+						Duplicate/T/O ds,root:Packages:analysisTools:DataSets:ogAT_WaveListTable_FullPath
+					EndIf
 					break
 				case "waveNotMatch":
 					SVAR waveNotMatchStr = root:Packages:analysisTools:waveNotMatchStr
 					waveNotMatchStr = sval
+					
+					df = GetDataFolder(1)
 					//Remove selection from the data set box
 					ListBox dataSetListBox win=analysis_tools,selRow=-1
 					clearFilterSet()
 					
 					getWaveMatchList()
 					fillFilterTable()
-					updateWSDimText()				
-				
+					updateWSDimText()
+					
+					If(!strlen(dataSetName))
+						//Save the wave list table prior to grouping again, ensures its correct
+						Wave/T/Z ds = root:Packages:analysisTools:AT_WaveListTable_FullPath
+						Duplicate/T/O ds,root:Packages:analysisTools:DataSets:ogAT_WaveListTable_FullPath
+					EndIf
+			
+					SetDataFolder $df
 					break
 					
 				case "relativeFolderMatch":
+					df = GetDataFolder(1)
 					//Remove selection from the data set box
 					ListBox dataSetListBox win=analysis_tools,selRow=-1
 					clearFilterSet()
 					getWaveMatchList()
 					fillFilterTable()
 					updateWSDimText()	
-					break
-				case "waveGrouping":			
-					String dataSetName= whichDataSet()
-					String theList = GetDSWaveList()
-					setWaveGrouping(theList,dataSetName)
+					SetDataFolder $df
 					
-					Wave/T ds = $("root:Packages:analysisTools:DataSets:DS_" + dataSetName)
-					
-					If(!WaveExists(ds))
-						Wave/T ds = root:Packages:analysisTools:AT_WaveListTable_FullPath
+					If(!strlen(dataSetName))
+						//Save the wave list table prior to grouping again, ensures its correct
+						Wave/T/Z ds = root:Packages:analysisTools:AT_WaveListTable_FullPath
+						Duplicate/T/O ds,root:Packages:analysisTools:DataSets:ogAT_WaveListTable_FullPath
 					EndIf
 					
-					//Save the wave grouping so I can undo any prefix/group/series/etc adjustments
-					Make/O/T/N=(DimSize(ds,0)) $("root:Packages:analysisTools:DataSets:ogDS_saveDSGrouping")
-					Wave/T saveDSgrouping = $("root:Packages:analysisTools:DataSets:ogDS_saveDSGrouping")
-					saveDSgrouping = ds
-					//break
+					break
 				case "prefixGroup":
 				case "groupGroup":
 				case "seriesGroup":
 				case "sweepGroup":
-				case "traceGroup":
-					If(cmpstr(sva.ctrlName,"waveGrouping"))			
-						dataSetName= whichDataSet()
-						theList = GetDSWaveList()
-					EndIf
+				case "traceGroup":		
+				case "waveGrouping":			
+					dataSetName= whichDataSet()
 					
-					Wave/T ds = $("root:Packages:analysisTools:DataSets:DS_" + dataSetName)
-					
-					If(!WaveExists(ds) && cmpstr(sva.ctrlName,"waveGrouping"))			
-						//run match lists, and redo the group filtering
-						getWaveMatchList()
-						fillFilterTable()
+					//If no data set is selected, use the wave present in the match list box
+					If(!strlen(dataSetName))
+						Wave/T/Z waveListTable = getWaveMatchList() //also gets the full path
+						Wave/T/Z ds = root:Packages:analysisTools:AT_WaveListTable_FullPath
+						
+						//original ungrouped list
+						Wave/T/Z original = root:Packages:analysisTools:DataSets:ogAT_WaveListTable_FullPath
+						
+						Duplicate/O original,root:Packages:analysisTools:DataSets:ogAT_WaveListTable_UnGroup
+						Wave/T/Z unGrouped = root:Packages:analysisTools:DataSets:ogAT_WaveListTable_UnGroup
+						
+						//filter the waves
+						filterByGroup(ds)
+						filterByGroup(unGrouped)
+								
+						//group the waves
+						setWaveGrouping(unGrouped,ds)
+						
+						//make sure wave sets are all valid dimensions	
+						checkWaveSets(ds)
+						
+						//update the list box and wave counters
+						updateWaveListBox()
 						updateWSDimText()
-						Wave/T ds = root:Packages:analysisTools:AT_WaveListTable_FullPath
 						
-						//Save the wave list table prior to grouping again, ensures its correct
-						Duplicate/T/O ds,root:Packages:analysisTools:DataSets:ogAT_WaveListTable_FullPath
-						Wave/T/Z ogAT_WaveListTable_FullPath = root:Packages:analysisTools:DataSets:ogAT_WaveListTable_FullPath
-						ogAT_WaveListTable_FullPath = ds
+					Else
+						//data set
+						Wave/T/Z ds = GetDataSetWave(dsName = dataSetName)
 						
+						//original ungrouped list
+						Wave/T/Z original = $("root:Packages:analysisTools:DataSets:ogDS_" + dataSetName)
 						
-						setWaveGrouping(theList,dataSetName)
-							
+						//group the waves
+						setWaveGrouping(original,ds)
+						
+						//filter the waves
+						filterByGroup(ds)
+						
+						//make sure wave sets are all valid dimensions	
+						checkWaveSets(ds)
+						
+						//fill out the filter table
+						fillFilterTable()
+						
+						//update the list box and wave counters
+						updateWaveListBox()
+						updateWSDimText()
 					EndIf
-					
-					
-					//check for additional filters
-					filterByGroup(theList,dataSetName)
-					
-					//make sure wave sets are all valid dimensions	
-					checkWaveSets(dataSetName)
-					
-					//fill out the table that remembers the filtering settings of each data set
-					fillFilterTable()			
-					
-					//update the list box and wave counters
-					updateWaveListBox()
-					updateWSDimText()
-							
-					//Save the wave grouping so I can undo any prefix/group/series/etc adjustments
-				//	Make/O/T/N=(DimSize(ds,0)) $("root:Packages:analysisTools:DataSets:ogDS_saveDSGrouping")
-				//	Wave/T saveDSgrouping = $("root:Packages:analysisTools:DataSets:ogDS_saveDSGrouping")
-				//	saveDSgrouping = ds
-					
+	
 					break
 			endswitch
 			break

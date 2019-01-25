@@ -151,6 +151,40 @@ Function addDataSet(dataSetName,[selection])
 			return -1
 		EndIf
 		
+		
+		//Full paths of the waves in the match list box, ungrouped
+		Wave/T fullPathTable = root:Packages:analysisTools:DataSets:ogAT_WaveListTable_UnGroup
+		
+		//Make new text wave to hold the data set wave names
+		Make/O/T/N=(DimSize(fullPathTable,0)) $("root:Packages:analysisTools:DataSets:DS_" + dataSetName)
+		Make/O/T/N=(DimSize(fullPathTable,0)) $("root:Packages:analysisTools:DataSets:ogDS_" + dataSetName)
+		Wave/T dataSetWave = $("root:Packages:analysisTools:DataSets:DS_" + dataSetName)
+		Wave/T ogdataSetWave = $("root:Packages:analysisTools:DataSets:ogDS_" + dataSetName)
+
+		//Set the data set tables
+		ogdataSetWave = fullPathTable
+		dataSetWave = fullPathTable
+		
+		
+		//Add the DS name to the list wave
+		currentNumSets = DimSize(dataSetNames,0)
+		Redimension/N=(currentNumSets+1) dataSetNames,dataSetSelWave
+		
+		dataSetNames[currentNumSets] = dataSetName
+		ListBox dataSetListBox win=analysis_tools,selrow=currentNumSets+1
+
+		fillFilterTable()
+		
+		//Reload the data set names
+		GetDataSetNames()
+		
+		SVAR DSNames = root:Packages:analysisTools:DataSets:DSNames
+		DSNames = "--None--;--Scan List--;--Item List--;" + textWaveToStringList(dataSetNames,";")
+			
+		return 0
+		
+		
+		
 		//Get the full paths of the waves in listwave
 		SVAR whichList = root:Packages:analysisTools:whichList
 		SVAR scanListStr = root:Packages:twoP:examine:scanListStr
@@ -710,15 +744,11 @@ Function clearFilterSet()
 End
 
 //If it finds any emtpy wavesets, eliminates them
-Function checkWaveSets(dataSetName)
-	String dataSetName
-	Wave/T ds = GetDataSetWave(dsName = dataSetName)
-	Wave/T ogds = $("root:Packages:analysisTools:DataSets:ogDS_" + dataSetName)
+Function checkWaveSets(ds)
+	Wave/T/Z ds 
 	
-	If(!WaveExists(ds))
-		Wave/T ds = root:Packages:analysisTools:AT_WaveListTable_FullPath
-		Wave/T ogds = root:Packages:analysisTools:AT_WaveListTable_FullPath
-	EndIf
+	String dataSetName = StringFromList(1,NameOfWave(ds),"_")
+	Wave/T ogds = $("root:Packages:analysisTools:DataSets:ogDS_" + dataSetName)
 	
 	Variable i,pos1,pos2,index,count
 	
@@ -760,25 +790,11 @@ Function checkWaveSets(dataSetName)
 End
 
 //Takes input of prefix,group,series,sweep, or trace and filters the wave list accordingly
-Function/S filterByGroup(theList,dataSetName)
-	String theList,dataSetName
-
-	//current waveset grouping
-	Wave/T ds = GetDataSetWave(dsName = dataSetName)
+Function/S filterByGroup(ds)
+	Wave/T/Z ds
 	
-	//If no data set selection, we'll use the wave list table instead
-	//This will happen if no data sets have been defined yet
-	If(!WaveExists(ds))
-		Wave/T ds = root:Packages:analysisTools:AT_WaveListTable_FullPath
-	EndIf
-	
-	theList = GetDSWaveList()
-
-	//last waveset grouping
-	If(strlen(dataSetName))
-		Wave/T saveDSgrouping = $("root:Packages:analysisTools:DataSets:ogDS_saveDSGrouping")
-		theList = GetDSWaveList(dsName="saveDSgrouping",separator = ",")
-	EndIf
+	//List out all of the waves in the grouped data set
+	String theList = TableToList(ds,",")
 	
 	String groupList = "prefixGroup;groupGroup;seriesGroup;sweepGroup;traceGroup"
 	Variable i,j,k,numWaves,numTerms
@@ -794,17 +810,6 @@ Function/S filterByGroup(theList,dataSetName)
 			termCount += 1
 		EndIf
 	EndFor
-	
-	//break if no terms are present but a data sets was selected
-	If(termCount == 0 && strlen(dataSetName))
-		//Input the new list into the data set wave	
-		Wave/T saveDSgrouping = $("root:Packages:analysisTools:DataSets:ogDS_saveDSGrouping")
-		If(WaveExists(saveDSgrouping))
-			Redimension/N=(DimSize(saveDSgrouping,0)) ds
-			ds = saveDSgrouping
-		EndIf
-		return ""
-	EndIf
 		
 	numWaves = ItemsInList(theList,",")
 	
@@ -822,6 +827,8 @@ Function/S filterByGroup(theList,dataSetName)
 				
 		For(i=0;i<ItemsInList(theList,",");i+=1)
 			theWave = ParseFilePath(0,StringFromList(i,theList,","),":",1,0)
+			
+			//skip over wave set markers
 			If(stringmatch(theWave,"*WSN*"))
 				continue
 			EndIf
@@ -864,27 +871,19 @@ Function/S filterByGroup(theList,dataSetName)
 End
 
 //Reorganizes the waves in the data set according to the wave grouping
-Function setWaveGrouping(theList,dataSetName)
-	String theList,dataSetName
-	Wave/T ds = GetDataSetWave(dsName = dataSetName)
-	
-	If(!WaveExists(ds))
-		Wave/T ds = root:Packages:analysisTools:AT_WaveListTable_FullPath
-	EndIf
+Function setWaveGrouping(original,ds)
+	Wave/T original
+	Wave/T ds
 	
 	Variable numGroupings,numWaves,item,i,j,k,wsn,count
-	String term,name,matchName,matchTerm
+	String term,name,matchName,matchTerm,dataSetName
 	
-	//if there isn't a copy of the original ungrouped dataset, make one
-	String copyName = "root:Packages:analysisTools:DataSets:og" + NameOfWave(ds)
-	If(!WaveExists($copyName))
-		Duplicate/T/O ds,$copyName
-	EndIf
-	Wave/T copy = $copyName
+	//Get data set name
+	dataSetName = StringFromList(1,NameOfWave(ds),"_")
 	
-	//reset the wave groupings
-	Redimension/N=(DimSize(copy,0)) ds
-	ds = copy
+	//reset the wave groupings to the original ungrouped state
+	Redimension/N=(DimSize(original,0)) ds
+	ds = original
 	
 	ControlInfo/W=analysis_tools waveGrouping
 	String grouping = S_Value
@@ -904,8 +903,8 @@ Function setWaveGrouping(theList,dataSetName)
 		switch(item)
 			case -2:
 				//group all together
-				Redimension/N=(DimSize(copy,0)) ds
-				ds = copy
+				Redimension/N=(DimSize(original,0)) ds
+				ds = original
 				break
 			default:
 				//group by the index
@@ -913,16 +912,17 @@ Function setWaveGrouping(theList,dataSetName)
 				//If the data set is already grouped, must do next grouping within that structure
 				Variable m,numWaveSets = GetNumWaveSets(dataSetName)
 				String wsDims = GetWaveSetDims(dataSetName)
-				numWaves = DimSize(copy,0)
+				numWaves = DimSize(ds,0)
 				
 				//make fresh working waves
 				Make/T/FREE/N=(numWaves) tempDS
 				Make/FREE/N=(numWaves) matched
-				Make/T/FREE/N=(DimSize(ds,0)) copy2
-				copy2 = ds
+				Make/T/FREE/N=(DimSize(ds,0)) original2
+				original2 = ds
 				
 				matched = -1	
-					
+				count = 0
+				
 				For(m=0;m<numWaveSets;m+=1)
 					//uses block of waves from each subsequent waveset
 					numWaves = str2num(StringFromList(m,wsDims,";"))
@@ -930,7 +930,7 @@ Function setWaveGrouping(theList,dataSetName)
 					
 					For(j=0;j<numWaves;j+=1)
 						
-						If(matched[j + m*numWaves] != -1)
+						If(matched[j + count] != -1)
 							continue
 						EndIf
 						
@@ -939,7 +939,7 @@ Function setWaveGrouping(theList,dataSetName)
 						term = StringFromList(item,name,"_")
 						
 						For(k=0;k<numWaves;k+=1)
-							If(matched[k + m*numWaves] != -1)
+							If(matched[k + count] != -1)
 								continue
 							EndIf
 							//matchName = ParseFilePath(0,ds[k],":",1,0)
@@ -947,22 +947,23 @@ Function setWaveGrouping(theList,dataSetName)
 							matchTerm = StringFromList(item,matchName,"_")
 						
 							If(!cmpstr(term,matchTerm))
-								matched[k + m*numWaves] = wsn
+								matched[k + count] = wsn
 							EndIf	
 							
 						EndFor
 						wsn += 1
 					EndFor
+					count += numWaves
 				EndFor
 				
 				//Label first wave set, if there are more than 1
 				count = 0
 
 				//make copy of it without the wave set labels
-				Variable size = DimSize(copy2,0)
+				Variable size = DimSize(original2,0)
 				For(j=0;j<size;j+=1)
-					If(stringmatch(copy2[j],"*WSN*"))
-						DeletePoints j,1,copy2
+					If(stringmatch(original2[j],"*WSN*"))
+						DeletePoints j,1,original2
 						j -= 1
 						size -= 1
 					EndIf
@@ -975,12 +976,12 @@ Function setWaveGrouping(theList,dataSetName)
 				EndIf
 				
 				//sort data set
-				numWaves = DimSize(copy,0)
+				numWaves = DimSize(original,0)
 								
 				For(j=0;j<wsn;j+=1)
 					For(k=0;k<numWaves;k+=1)
 						If(matched[k] == j)
-							tempDS[count] = copy2[k]
+							tempDS[count] = original2[k]
 							count +=1
 						EndIf	
 					EndFor
@@ -996,8 +997,6 @@ Function setWaveGrouping(theList,dataSetName)
 				ds = tempDS
 		endswitch
 	EndFor
-	
-	//updateWaveListBox()
 End
 
 
