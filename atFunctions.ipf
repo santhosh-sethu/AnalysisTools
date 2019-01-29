@@ -3178,30 +3178,6 @@ End
 	endswitch
 End
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 //Makes histogram of a waves value distribution
 Function freqHistogram(inWave,[binWidth])
 	Wave inWave
@@ -5103,4 +5079,67 @@ Function FlattenWave(inputWave)
 	//KillWaves fitWave
 	
 	KillWaves filterWave
+End
+
+Function LoadStimulusData()
+	
+	Variable refnum
+	String message = "Select the stimulus file to load"
+	String fileFilters = "All Files:.*;"
+	Open/D/R/F=fileFilters/M=message refnum
+	String filePath = S_fileName
+	Close/A
+	
+	String tableName = ParseFilePath(0,filePath,":",1,0)
+	tableName = RemoveEnding(tableName,".txt")
+	
+	String line = ""
+	Make/O/T/N=(1,2,1) $tableName
+	Wave/T table = $tableName
+	
+	Open/Z=2/R/T="????" refNum as filePath
+	Variable row=0,col=0,depth=0,i,numItems
+	
+	Do
+		FReadLine refNum, line
+		
+		If(!strlen(line))
+			break
+		EndIf
+		
+		line = RemoveEnding(line,"\r")
+		If(!strlen(line))
+			continue
+		EndIf
+		
+		//Add another row if needed
+		If(row > DimSize(table,0) - 1)
+			Redimension/N=(DimSize(table,0)+1,-1,-1) table
+		EndIf
+			
+		If(stringmatch(line,"*ID:*"))
+			depth += 1
+			row = 0
+			Redimension/N=(-1,-1,depth) table
+			
+			table[row][0][depth-1] = "ID"
+			table[row][1][depth-1] = StringByKey("ID",line,":")
+			
+		ElseIf(stringmatch(line,"*Stimulus*"))
+		 	table[row][0][depth-1] = "Stimulus:"
+			table[row][1][depth-1] = StringByKey("Stimulus",line,":")
+		Else
+			numItems = ItemsInList(line,"\t")	
+			Redimension/N=(-1,numItems,-1) table
+			
+			For(i=0;i<numItems;i+=1)
+				String theItem = StringFromList(i,line,"\t")
+				table[row][i][depth-1] = theItem
+			EndFor
+		EndIf
+		
+		row += 1
+	While(strlen(line))
+	
+	Close refnum
 End

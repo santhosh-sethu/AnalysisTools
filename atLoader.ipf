@@ -60,9 +60,6 @@ Function LoadAnalysisSuite([left,top])
 		top = 0
 	EndIf
 		
-	
-		
-	
 	// Make the panel//////////
 	DoWindow analysis_tools
 	if(V_flag !=0)
@@ -174,7 +171,7 @@ Function LoadAnalysisSuite([left,top])
 	//packageTable[1][1] = "-------------------;Average;Error"
 	
 	
-	cmdList = "Data Sets;External Function;---------------;Load PClamp;---------------;Run Cmd Line;Average;Error;Kill Waves;----Packages----;Calcium Imaging"
+	cmdList = "Data Sets;External Function;---------------;Load PClamp;Load Stimulus Data;---------------;Run Cmd Line;Average;Error;Kill Waves;----Packages----;Calcium Imaging"
 
 	SVAR currentCmd = root:Packages:analysisTools:currentCmd
 	currentCmd = StringFromList(0,cmdList,";")
@@ -703,6 +700,11 @@ Function CreateControlLists(cmdList)
 	SVAR ctrlList_loadPClamp = root:Packages:analysisTools:ctrlList_loadPClamp
 	ctrlList_loadPClamp = "OpenABF2Loader"
 	
+	//Load Stimulus Data
+	String/G root:Packages:analysisTools:ctrlList_LoadStimulusData
+	SVAR ctrlList_LoadStimulusData = root:Packages:analysisTools:ctrlList_LoadStimulusData
+	ctrlList_LoadStimulusData = ""
+
 	//Run Cmd Line
 	String/G root:Packages:analysisTools:ctrlList_runCmdLine
 	SVAR ctrlList_runCmdLine = root:Packages:analysisTools:ctrlList_runCmdLine
@@ -799,6 +801,9 @@ Function ChangeControls(currentCmd,prevCmd)
 			break
 		case "Load PClamp":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_loadPClamp
+			break
+		case "Load Stimulus Data":
+			SVAR ctrlList = root:Packages:analysisTools:ctrlList_LoadStimulusData
 			break
 		case "Kill Waves":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_killwaves
@@ -916,6 +921,10 @@ Function ChangeControls(currentCmd,prevCmd)
 		case "Load PClamp":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_loadPClamp
 			runCmdStr = ""
+			break
+		case "Load Stimulus Data":
+			SVAR ctrlList = root:Packages:analysisTools:ctrlList_LoadStimulusData
+			runCmdStr = "LoadStimulusData()"
 			break
 		case "Kill Waves":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_killwaves
