@@ -5099,6 +5099,12 @@ Function LoadStimulusData()
 	
 	Open/Z=2/R/T="????" refNum as filePath
 	Variable row=0,col=0,depth=0,i,numItems
+	String numObjects = ""
+	
+	Variable objectNum,objectCount = 1
+	
+	//How many lines are in this file?
+	
 	
 	Do
 		FReadLine refNum, line
@@ -5142,4 +5148,46 @@ Function LoadStimulusData()
 	While(strlen(line))
 	
 	Close refnum
+		
+	//Sort the table by object number
+	Variable rows,cols,frames,index,j,k,count = 0
+	rows = DimSize(table,0)
+	cols = DimSize(table,1)
+	frames = DimSize(table,2)
+	
+	Make/FREE/T/N=(rows,cols) temp
+	
+	For(i=0;i<frames;i+=1)
+		count = 0
+		temp = table[p][q][i]
+		
+		//Get number of objects for this stimus
+		index = tableMatch("numObjects",table,returnCol=1)
+		If(index == -1)
+			return -1
+		EndIf
+		numObjects = table[3][index][i]
+		
+		index = tableMatch("objectNum",table,returnCol=1)
+		
+		If(index == -1)
+			return -1
+		EndIf
+		
+		//Loop through all the objects
+		For(k=1;k<str2num(numObjects)+1;k+=1)
+			//Loop through each row for each sequential object
+			For(j=3;j<rows;j+=1)//row 3 starts the stimulus data
+				If(!cmpstr(table[j][index][i],num2str(k)))
+					//If its the correct object number put it in the correct row of the temp table
+					temp[count + 3][] = table[j][q][i]
+					count += 1
+				ElseIf(!strlen(table[j][index][i]))
+					break
+				EndIf
+			EndFor
+		EndFor
+		table[][][i] = temp[p][q][0]
+	EndFor
+
 End

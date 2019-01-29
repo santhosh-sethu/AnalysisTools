@@ -1397,11 +1397,16 @@ Function AppendDSWaveToViewer(selWave,itemList,dsWave,[fullPathList])
 End
 
 //If str matches an entry in the tableWave, returns the row, otherwise return -1
-Function tableMatch(str,tableWave,[startp,endp])
+Function tableMatch(str,tableWave,[startp,endp,returnCol])
 	String str
 	Wave/T tableWave
-	Variable startp,endp//for range
-	Variable i,size = DimSize(tableWave,0)
+	Variable startp,endp,returnCol//for range
+	Variable i,j,size = DimSize(tableWave,0)
+	Variable cols = DimSize(tableWave,1)
+	
+	If(cols == 0)
+		cols = 1
+	EndIf
 	
 	If(ParamIsDefault(startp))
 		startp = 0
@@ -1411,10 +1416,20 @@ Function tableMatch(str,tableWave,[startp,endp])
 		endp = size - 1
 	EndIf
 	
-	For(i=startp;i<endp+1;i+=1)
-		If(stringmatch(tableWave[i],str))
-			return i
-		EndIf
+	If(ParamIsDefault(returnCol))
+		returnCol = 0
+	EndIf
+	
+	For(j=0;j<cols;j+=1)
+		For(i=startp;i<endp+1;i+=1)
+			If(stringmatch(tableWave[i][j],str))
+				If(returnCol)
+					return j
+				Else
+					return i
+				EndIf
+			EndIf
+		EndFor
 	EndFor
 	
 	return -1
