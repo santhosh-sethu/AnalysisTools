@@ -1280,7 +1280,16 @@ Function/S getWaveNames()
 		default:
 			Wave/T ds = GetDataSetWave(dsName=S_Value)
 			Variable pos = tableMatch("*WSN " + num2str(wsn) + "*",ds) + 1//first wave of the waveset
-			Variable endpos = pos + str2num(StringFromList(wsn,wsDims,";")) //Last wave of the waveset
+			If(pos == 0) //no wavesets defined, take all the waves at once
+				Variable endpos = DimSize(ds,0) - 1
+			Else
+				endpos = pos + str2num(StringFromList(wsn,wsDims,";")) //Last wave of the waveset
+			EndIf
+			
+			If(numtype(endpos) == 2) //only wave of the waveset
+				endpos = pos + 1
+			EndIf
+			
 			For(i=pos;i<endpos;i+=1)
 				theWaveList += ds[i] + ";"
 			EndFor
@@ -1390,7 +1399,9 @@ Function AppendDSWaveToViewer(selWave,itemList,dsWave,[fullPathList])
 			If(WaveType($StringFromList(i,dsWaveList,";"),1) == 2)
 				continue //text wave
 			Else
-				AppendToGraph/W=analysis_tools#atViewerGraph $StringFromList(i,dsWaveList,";")
+				If(WaveExists($StringFromList(i,dsWaveList,";")))
+					AppendToGraph/W=analysis_tools#atViewerGraph $StringFromList(i,dsWaveList,";")
+				EndIf
 			EndIf
 		EndFor
 	EndIf

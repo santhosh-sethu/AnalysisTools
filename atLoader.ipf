@@ -171,7 +171,7 @@ Function LoadAnalysisSuite([left,top])
 	//packageTable[1][1] = "-------------------;Average;Error"
 	
 	
-	cmdList = "Data Sets;External Function;---------------;Load PClamp;Load Stimulus Data;---------------;Run Cmd Line;Average;Error;Kill Waves;----Packages----;Calcium Imaging"
+	cmdList = "Data Sets;External Function;---------------;Load PClamp;Load Stimulus Data;---------------;Run Cmd Line;Average;Error;Kill Waves;Duplicate/Rename;----Packages----;Calcium Imaging"
 
 	SVAR currentCmd = root:Packages:analysisTools:currentCmd
 	currentCmd = StringFromList(0,cmdList,";")
@@ -373,7 +373,14 @@ Function LoadAnalysisSuite([left,top])
 		
 	//Errors
 	PopUpMenu errType win=analysis_tools,pos={20,120},size={50,20},title="Type",value="sem;sdev",disable=1
-
+	
+	//Duplicate/Rename
+	SetVariable prefixName win=analysis_tools,pos={20,50},size={50,20},title="P",value=_STR:"",disable=1
+	SetVariable groupName win=analysis_tools,pos={80,50},size={50,20},title="G",value=_STR:"",disable=1
+	SetVariable seriesName win=analysis_tools,pos={140,50},size={50,20},title="Se",value=_STR:"",disable=1
+	SetVariable sweepName win=analysis_tools,pos={200,50},size={50,20},title="Sw",value=_STR:"",disable=1
+	SetVariable traceName win=analysis_tools,pos={260,50},size={50,20},title="T",value=_STR:"",disable=1
+	
 	//Load PClamp
 	Button OpenABF2Loader win=analysis_tools,pos={71,66},size={150,20},title="Open PClamp Loader",disable=1,proc=atButtonProc
 	
@@ -585,6 +592,11 @@ Function CreateControlLists(cmdList)
 	String/G root:Packages:analysisTools:ctrlList_killwaves
 	SVAR ctrlList_killwaves = root:Packages:analysisTools:ctrlList_killwaves
 	ctrlList_killwaves = "extFuncDS;extFuncChannelPop;extFuncDSListBox"
+	
+	//Duplicate/Rename
+	String/G root:Packages:analysisTools:ctrlList_duplicateRename
+	SVAR ctrlList_duplicateRename = root:Packages:analysisTools:ctrlList_duplicateRename
+	ctrlList_duplicateRename = "extFuncDS;extFuncChannelPop;extFuncDSListBox;prefixName;groupName;SeriesName;SweepName;TraceName"
 	
 	//Space-Time dF
 	String/G root:Packages:analysisTools:ctrlList_spacetimeDF
@@ -808,6 +820,9 @@ Function ChangeControls(currentCmd,prevCmd)
 		case "Kill Waves":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_killwaves
 			break
+		case "Duplicate/Rename":
+			SVAR ctrlList = root:Packages:analysisTools:ctrlList_duplicateRename
+			break
 		case "External Function":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_extFunc
 			ControlInfo/W=analysis_tools extFuncPopUp
@@ -929,6 +944,10 @@ Function ChangeControls(currentCmd,prevCmd)
 		case "Kill Waves":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_killwaves
 			runCmdStr = "AT_KillWaves()"
+			break
+		case "Duplicate/Rename":
+			SVAR ctrlList = root:Packages:analysisTools:ctrlList_duplicateRename
+			runCmdStr = "duplicateRename()"
 			break
 		case "External Function":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_extFunc
@@ -1088,6 +1107,7 @@ Function ChangeControls(currentCmd,prevCmd)
 			DrawText/W=analysis_tools 255,117,"Data Sets:"
 			SetDrawLayer/W=analysis_tools ProgBack
 			break
+		case "Duplicate/Rename":
 		case "Average":
 		case "Error":
 		case "Kill Waves":

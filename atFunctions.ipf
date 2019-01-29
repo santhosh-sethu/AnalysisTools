@@ -5191,3 +5191,52 @@ Function LoadStimulusData()
 	EndFor
 
 End
+
+Function duplicateRename()
+
+	Variable numWaves,i,j,pos
+	String theWaveList,name,newName,posList,ctrlList
+	
+	posList = "0;1;2;3;4"
+	ctrlList = "prefixName;groupName;seriesName;sweepName;traceName"
+	
+	//Finds the wave paths for analysis
+	theWaveList = getWaveNames()
+	numWaves = ItemsInList(theWaveList,";")
+	
+	For(i=0;i<numWaves;i+=1)
+		Wave/Z theWave = $StringFromList(i,theWaveList,";")
+		If(!WaveExists(theWave))
+			continue
+		EndIf	
+		
+		SetDataFolder GetWavesDataFolder(theWave,1)
+		name = NameOfWave(theWave)
+		newName = name
+		
+		For(j=4;j>-1;j-=1)	//step backwards
+			//new name and the position
+			ControlInfo/W=analysis_tools $StringFromList(j,ctrlList,";")
+			pos = str2num(StringFromList(j,posList,";"))
+			
+			If(strlen(S_Value))
+				If(!cmpstr(S_Value,"-"))
+					newName = RemoveListItem(pos,newName,"_")
+				Else
+					newName = RemoveListItem(pos,newName,"_")
+					newName = AddListItem(S_Value,newName,"_",pos)
+					newName = RemoveEnding(newName,"_")
+				EndIf
+			EndIf
+			
+		EndFor
+		
+		//If no changes in name were made, make the name unique with extra 0,1,2... at the end
+		If(!cmpstr(name,newName))
+			newName = UniqueName(newName,1,0)
+		EndIf
+		
+		Duplicate/O theWave,$newName
+	EndFor
+
+End
