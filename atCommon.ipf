@@ -1281,7 +1281,7 @@ Function/S getWaveNames()
 			Wave/T ds = GetDataSetWave(dsName=S_Value)
 			Variable pos = tableMatch("*WSN " + num2str(wsn) + "*",ds) + 1//first wave of the waveset
 			If(pos == 0) //no wavesets defined, take all the waves at once
-				Variable endpos = DimSize(ds,0) - 1
+				Variable endpos = DimSize(ds,0)
 			Else
 				endpos = pos + str2num(StringFromList(wsn,wsDims,";")) //Last wave of the waveset
 			EndIf
