@@ -1621,92 +1621,16 @@ Function gridROI()//theMask,size)
 				Make/O/N=5 $ROIName
 				Wave ROIy = $ROIName
 				
-				//Define the ROI coordinates
-				If(optimizePos)
-					//Optimize the position of each ROI to maximize pixels with activity
-					Variable startP,startQ,m,n,optimalP,optimalQ,maxAvg,whichPass
-					startP = i - ceil(0.5*sizeX)
-					startQ = j - ceil(0.5*sizeY)
-					m = 0
-					n = 0
-					maxAvg = 0
-					
-					whichPass = 0
-					
-					//check for valid dimensions
-					startP = (startP < 0) ? 0 : startP
-					startQ = (startQ < 0) ? 0 : startQ
-					
-					optimalP = startP
-					optimalQ = startQ
-					whichPass = 0
-					
-					//Run optimization loop
-					For(m=0;m<sizeX;m+=1)	//m and n count the row and col within optimization 
-						If(startP + m > xDim - 1) //can't exceed row dimensions
-							continue
-						EndIf
-						
-						For(n=0;n<sizeY;n+=1)
-							If(startQ + n > yDim - 1) //can't exceed col dimensions
-								continue
-							EndIf
-							whichPass += 1
-							
-							buffer = theMask[p + startP + m][q + startQ + n]
-							avg = mean(buffer)	//avg is greater than 0 if it contains a non-masked point
-							
-							//Make sure the area hasn't already been used in another ROI
-							theArea = usedPixels[p + startP + m][q + startQ + n]
-							areaAvg = mean(theArea)
-							
-							If(areaAvg > overlapPct)
-								continue
-							EndIf
-							
-							If(whichPass == 1) //first valid pass only
-								maxAvg = avg
-								optimalP = startP + m
-								optimalQ = startQ + n
-							Else
-								//compare this ROI position to the previous best position
-								If(avg > maxAvg)
-									maxAvg = avg
-									optimalP = startP + m
-									optimalQ = startQ + n
-								EndIf
-							EndIf
-							
-						EndFor
-					EndFor
-					
-
-						ROIx[0] = IndexToScale(theMask,optimalP,0)
-						ROIx[1] = IndexToScale(theMask,optimalP,0)
-						ROIx[2] = IndexToScale(theMask,optimalP + sizeX,0)
-						ROIx[3] = IndexToScale(theMask,optimalP + sizeX,0)
-						ROIx[4] = IndexToScale(theMask,optimalP,0)
-						ROIy[0] = IndexToScale(theMask,optimalQ,1)
-						ROIy[1] = IndexToScale(theMask,optimalQ + sizeY,1)
-						ROIy[2] = IndexToScale(theMask,optimalQ + sizeY,1)
-						ROIy[3] = IndexToScale(theMask,optimalQ,1)
-						ROIy[4] = IndexToScale(theMask,optimalQ,1)
-					
-						//Fill in which pixels were occupied by the mask
-						usedPixels[optimalP,optimalP+sizeX][optimalQ,optimalQ+sizeY] = 1
-			
-				Else
-					ROIx[0] = IndexToScale(theMask,i,0)
-					ROIx[1] = IndexToScale(theMask,i,0)
-					ROIx[2] = IndexToScale(theMask,i + sizeX,0)
-					ROIx[3] = IndexToScale(theMask,i + sizeX,0)
-					ROIx[4] = IndexToScale(theMask,i,0)
-					ROIy[0] = IndexToScale(theMask,j,1)
-					ROIy[1] = IndexToScale(theMask,j + sizeY,1)
-					ROIy[2] = IndexToScale(theMask,j + sizeY,1)
-					ROIy[3] = IndexToScale(theMask,j,1)
-					ROIy[4] = IndexToScale(theMask,j,1)
-				EndIf
+				ROIx[0] = IndexToScale(theMask,i,0)
+				ROIx[1] = IndexToScale(theMask,i,0)
+				ROIx[2] = IndexToScale(theMask,i + sizeX,0)
+				ROIx[3] = IndexToScale(theMask,i + sizeX,0)
+				ROIx[4] = IndexToScale(theMask,i,0)
+				ROIy[0] = IndexToScale(theMask,j,1)
+				ROIy[1] = IndexToScale(theMask,j + sizeY,1)
+				ROIy[2] = IndexToScale(theMask,j + sizeY,1)
+				ROIy[3] = IndexToScale(theMask,j,1)
+				ROIy[4] = IndexToScale(theMask,j,1)
 					
 				count += 1
 			Else
@@ -1735,9 +1659,114 @@ Function gridROI()//theMask,size)
 	SetScale/I x,startX,endX,grid_ROIMask
 	SetScale/I y,startY,endY,grid_ROIMask
 	
+	//Cleanup 
+	KillWaves/Z theMask
 End
 
-
+//Takes the time-varying ROI data from GetROI(), and identifies ROIs that have no signal
+//Use the Scan List and ROI List to define the waves to use for filtering
+Function filterROI()
+	SVAR scanListStr = root:Packages:twoP:examine:scanListStr
+	SVAR ROIListStr = root:Packages:twoP:examine:ROIListStr
+	
+	Variable numScans,numROIs,i,j,noise,signal,snr,passed = 0
+	String theScanName,theROI,channel,theName,list=""
+	
+	numScans = ItemsInList(scanListStr,";")
+	numROIs = ItemsInList(ROIListStr,";")
+	channel = RemoveEnding(getChannel(1),";") //what channel are we using?
+	
+	ControlInfo/W=analysis_tools bslnStVar
+	Variable bslnStart = V_Value
+	ControlInfo/W=analysis_tools bslnEndVar
+	Variable bslnEnd = V_Value
+	ControlInfo/W=analysis_tools peakStVar
+	Variable pkStart = V_Value
+	ControlInfo/W=analysis_tools peakEndVar
+	Variable pkEnd = V_Value
+	ControlInfo/W=analysis_tools roiThreshold
+	Variable roiThreshold = V_Value
+	ControlInfo/W=analysis_tools thresholdType
+	String thresholdType = S_Value
+	
+	For(i=0;i<numROIs;i+=1)
+		//get the ROI name
+		theROI = StringFromList(i,ROIListStr,";")
+		passed = 0
+		For(j=0;j<numScans;j+=1)
+			//get the scan name
+			theScanName = StringFromList(j,scanListStr,";")
+			
+			//determine the GetROI wave name
+			theName = "root:ROI_analysis:" + "ROI" + theROI + ":" + theScanName + "_" + channel + "_" + "ROI" + theROI + "_"
+			strswitch(channel)
+				case "ch1":
+				case "ch2":
+					theName += "dF"
+					break
+				case "ratio":
+					theName += "dGR"
+					break
+			endswitch
+			
+			//Does the wave exist?
+			Wave/Z theWave = $theName
+			If(!WaveExists(theWave))
+				print "ERROR: Couldn't find the wave: " + theName
+				continue
+			EndIf
+			
+			strswitch(thresholdType)
+				case "∆F/F":
+					Variable theMax = WaveMax(theWave,pkStart,pkEnd)
+					//Doesn't reach threshold
+					If(theMax > roiThreshold)
+						passed = 1
+					EndIf
+					break
+				case "SNR":
+					//Get stdev of the baseline noise section
+					WaveStats/Q/R=(bslnStart,bslnEnd) theWave
+					noise = V_sdev
+					
+					//Get mean of the signal section
+					WaveStats/Q/R=(pkStart,pkEnd) theWave
+					signal = V_max // incorporates both peak and average over the time interval
+					
+					snr = (signal^2)/(noise^2)
+					
+					//Doesn't reach threshold
+					If(snr > roiThreshold)
+						passed = 1	
+					EndIf
+					
+					break
+			endswitch
+		EndFor
+		
+		//If the ROI passed threshold for any one of the scans, then it passes the test. 
+		If(!passed)
+			list += theROI + ","
+		EndIf
+	EndFor
+	
+	list = RemoveEnding(list,",")
+	
+	If(strlen(list))
+		String promptStr = list + "\nThese ROIs didn't reach threshold. Discard them?"
+		DoAlert/T="Discard ROIs?" 1,promptStr
+	Else
+		print "All ROIs passed the threshold"
+	EndIf
+	
+	If(V_flag == 1)
+	//yes clicked
+		deleteROI(list)
+	ElseIf(V_flag == 2)
+	//no clicked
+	
+	EndIf
+End
 
 //Displays ROI scans and arranges them for easy viewing and comparison
 Function displayROIs()

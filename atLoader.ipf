@@ -163,7 +163,7 @@ Function LoadAnalysisSuite([left,top])
 	Make/O/T/N=(2,2) root:Packages:analysisTools:packageTable
 	Wave/T packageTable = root:Packages:analysisTools:packageTable
 	packageTable[0][0] = "Calcium Imaging"
-	packageTable[0][1] = "-------ROIs--------;MultiROI;ROI Grid;Display ROIs;-------Maps-------;"
+	packageTable[0][1] = "-------ROIs--------;MultiROI;ROI Grid;Filter ROI;Display ROIs;-------Maps-------;"
 	packageTable[0][1] += "df Map;Vector Sum Map;------Masks-------;Get Dendritic Mask;Mask Scan Data;"
 	packageTable[0][1] += "----Registration---;Adjust Galvo Distortion;Register Image;Rescale Scans"
 	
@@ -456,6 +456,10 @@ Function LoadAnalysisSuite([left,top])
 	SetVariable pctOverlap win=analysis_tools,pos={196,61},size={80,20},title="% Overlap",value=_NUM:0,disable=1
 	SetVariable pixelThresholdPct win=analysis_tools,pos={196,87},size={95,20},title="% Threshold",value=_NUM:0,limits={0,100,1},disable=1
 	
+	//For Filter ROI
+	PopUpMenu thresholdType win=analysis_tools,pos={10,156},size={140,20},title="Threshold Type",value="∆F/F;SNR",disable=1
+	SetVariable roiThreshold win=analysis_tools,pos={145,158},size={40,20},title="",limits={0,inf,0.05},value=_NUM:1,disable=1
+	
 	//For External Functions
 	PopUpMenu extFuncPopUp win=analysis_tools,pos={21,67},size={150,20},title="Functions:",fSize=12,disable=1,value=#"root:Packages:analysisTools:extFuncList",proc=atPopProc
 	
@@ -700,8 +704,13 @@ Function CreateControlLists(cmdList)
 	//ROI Grid
 	String/G root:Packages:analysisTools:ctrlList_roiGrid
 	SVAR ctrlList_roiGrid = root:Packages:analysisTools:ctrlList_roiGrid
-	ctrlList_roiGrid = "maskListPopUp;gridSizeX;gridSizeY;overwriteGrid;ch1Check;ch2Check;optimizePosition;pctOverlap;pixelThresholdPct" 
-
+	ctrlList_roiGrid = "maskListPopUp;gridSizeX;gridSizeY;overwriteGrid;ch1Check;ch2Check;pixelThresholdPct" 
+	
+	//Filter ROI
+	String/G root:Packages:analysisTools:ctrlList_filterROI
+	SVAR ctrlList_filterROI = root:Packages:analysisTools:ctrlList_filterROI
+	ctrlList_filterROI = "roiThreshold;thresholdType;bslnStVar;bslnEndVar;peakStVar;peakEndVar;ch1Check;ch2Check;ratioCheck" 
+	
 	//For External Functions
 	String/G root:Packages:analysisTools:ctrlList_extFunc
 	SVAR ctrlList_extFunc = root:Packages:analysisTools:ctrlList_extFunc
@@ -810,6 +819,9 @@ Function ChangeControls(currentCmd,prevCmd)
 			break
 		case "ROI Grid":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_roiGrid
+			break
+		case "Filter ROI":
+			SVAR ctrlList = root:Packages:analysisTools:ctrlList_filterROI
 			break
 		case "Load PClamp":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_loadPClamp
@@ -932,6 +944,10 @@ Function ChangeControls(currentCmd,prevCmd)
 		case "ROI Grid":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_roiGrid
 			runCmdStr = "gridROI()"
+			break
+		case "Filter ROI":
+			SVAR ctrlList = root:Packages:analysisTools:ctrlList_filterROI
+			runCmdStr = "filterROI()"
 			break
 		case "Load PClamp":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_loadPClamp

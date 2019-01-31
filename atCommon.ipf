@@ -1560,6 +1560,9 @@ Function/S GetMaskWaveList()
 		EndIf
 	EndFor
 	
+	//Add the option for none to the front of the list
+	maskList = "None;" + maskList
+	
 	return maskList
 End
 
@@ -3022,10 +3025,91 @@ Function deleteGridROI(ROIListWave,ROIListSelWave)
 	
 	For(i=0;i<ItemsInList(objectList,",");i+=1)
 		Wave theROI = $("root:twoP_ROIS:" + StringFromList(i,roiList,","))
-		KillWaves/Z theROI
+		ReallyKillWaves(theROI)
 	EndFor
 	
 End
+
+//input a list of ROIs to delete
+Function deleteROI(list)
+	String list
+	Wave/T ROIListWave = root:Packages:twoP:examine:ROIListWave
+	Wave ROIListSelWave = root:Packages:twoP:examine:ROIListSelWave
+	
+	Variable size,i,index
+	
+	size = ItemsInList(list,",")
+	
+	SetDataFolder root:twoP_ROIS
+	
+	For(i=size-1;i>-1;i-=1)//count down
+		Wave/Z theROI = $("root:twoP_ROIS:" + StringFromList(i,list,",") + "_y")
+		ReallyKillWaves(theROI)
+		
+		Wave/Z theROI = $("root:twoP_ROIS:" + StringFromList(i,list,",") + "_x")
+		ReallyKillWaves(theROI)
+		
+		index = tableMatch(StringFromList(i,list,","),ROIListWave)
+		If(index != -1)
+			DeletePoints/M=0 index,1,ROIListWave,ROIListSelWave
+		EndIf
+	EndFor
+	
+End
+
+Function ReallyKillWaves(w)
+  Wave w
+
+  string name=nameofwave(w)
+  string graphs=WinList("*",";","WIN:1") // A list of all graphs
+  variable i,j
+  for(i=0;i<itemsinlist(graphs);i+=1)
+    string graph=stringfromlist(i,graphs)
+    string traces=TraceNameList(graph,";",3)
+    
+    //check all the twoP graph subwindows
+    If(!cmpstr(graph,"twoPScanGraph"))
+    	graph = "twoPscanGraph#GCH1"
+    	traces=TraceNameList(graph,";",3)
+    	if(whichlistitem(name,traces) != -1) // Assumes that each wave is plotted at most once on a graph.  
+      	RemoveFromGraph /W=$graph $name
+    	endif
+    	graph = "twoPscanGraph#GCH2"
+    	traces=TraceNameList(graph,";",3)
+    	if(whichlistitem(name,traces) != -1) // Assumes that each wave is plotted at most once on a graph.  
+      	RemoveFromGraph /W=$graph $name
+    	endif
+    	graph = "twoPscanGraph#GMRG"
+    	traces=TraceNameList(graph,";",3)
+    	if(whichlistitem(name,traces) != -1) // Assumes that each wave is plotted at most once on a graph.  
+      	RemoveFromGraph /W=$graph $name
+    	endif	
+    Else
+    	traces=TraceNameList(graph,";",3)
+    
+	    if(whichlistitem(name,traces) != -1) // Assumes that each wave is plotted at most once on a graph.  
+	      RemoveFromGraph /W=$graph $name
+	    endif
+	 EndIf 
+  endfor
+
+  string tables=WinList("*",";","WIN:2") // A list of all tables
+  for(i=0;i<itemsinlist(tables);i+=1)
+    string table=stringfromlist(i,tables)
+    j=0
+    do
+      string column=StringFromList(j,table)
+      if(strlen(column))
+        RemoveFromTable /Z/W=$table $column
+        j+=1
+      else
+        break
+      endif
+    while(1)
+  endfor 
+
+  killwaves /z w
+End  
 
 Function FilterROI_Table(roiTable,threshold,matchStr)
 	Wave/T roiTable
