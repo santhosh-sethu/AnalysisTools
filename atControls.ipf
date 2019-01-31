@@ -859,12 +859,13 @@ Function atSetVarProc(sva) : SetVariableControl
 				case "waveMatch":
 					SVAR waveMatchStr = root:Packages:analysisTools:waveMatchStr
 					waveMatchStr = sval
-					String dataSetName= whichDataSet()
 					
 					String df = GetDataFolder(1)
 					
 					//Remove selection from the data set box
 					ListBox dataSetListBox win=analysis_tools,selRow=-1
+					String dataSetName= whichDataSet()
+					
 					clearFilterSet()
 					
 					getWaveMatchList()
@@ -888,21 +889,24 @@ Function atSetVarProc(sva) : SetVariableControl
 					df = GetDataFolder(1)
 					//Remove selection from the data set box
 					ListBox dataSetListBox win=analysis_tools,selRow=-1
+					dataSetName= whichDataSet()
+					
 					clearFilterSet()
 					
 					getWaveMatchList()
 					fillFilterTable()
 					updateWSDimText()
+					SetDataFolder $df
 					
 					If(!strlen(dataSetName))
 						//Save the wave list table prior to grouping again, ensures its correct
 						Wave/T/Z ds = root:Packages:analysisTools:AT_WaveListTable_FullPath
 						Duplicate/T/O ds,root:Packages:analysisTools:DataSets:ogAT_WaveListTable_FullPath,root:Packages:analysisTools:DataSets:ogAT_WaveListTable_UnGroup
 					EndIf
-
-					SetDataFolder $df
-					break
 					
+					SetDataFolder $df
+					
+					break	
 				case "relativeFolderMatch":
 					df = GetDataFolder(1)
 					//Remove selection from the data set box
