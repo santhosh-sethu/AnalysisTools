@@ -2124,10 +2124,19 @@ End
 
 Function fillROITable(roiTable)
 	Wave/T roiTable
+	SetDataFolder root:
+		
+	SVAR ROIListStr = root:Packages:twoP:examine:ROIListStr
+	Variable size = ItemsInList(ROIListStr,";")
+	
+	If(!WaveExists(roiTable))
+		Make/O/T/N=(size) roiTable
+		Wave/T roiTable = roiTable
+	EndIf
 	
 	Variable i
-	For(i=0;i<155;i+=1)
-		roiTable[i] = "grid" + num2str(i)
+	For(i=0;i<size;i+=1)
+		roiTable[i] = StringFromList(i,ROIListStr,";")
 	EndFor
 End
 
@@ -3565,21 +3574,36 @@ Function selectALL(control,mode)
 	String control,mode
 	//Selection wave for the scan list
 	Wave scanSelWave = root:Packages:twoP:examine:selWave
+	Wave/T scanListWave = root:Packages:twoP:examine:scanListWave
+	
 	//Selection wave for the ROI list
 	Wave roiSelWave = root:Packages:twoP:examine:ROIListSelWave
+	Wave/T roiListWave = root:Packages:twoP:examine:roiListWave
+	
 	//Selection wave for the folder list
 	Wave folderSelWave = root:Packages:analysisTools:selFolderWave
 	//Selection wave for the wave item list
 	Wave itemSelWave = root:Packages:analysisTools:itemListSelWave
+	
+	SVAR ROIListStr = root:Packages:twoP:examine:ROIListStr
+	SVAR scanListStr = root:Packages:twoP:examine:scanListStr
+
+	Variable i
 	
 	strswitch(mode)
 		case "AT":
 			strswitch(control)
 				case "selectAll_Left":
 					scanSelWave = 1
+					For(i=0;i<DimSize(scanListWave,0);i+=1)
+						scanListStr += scanListWave[i] + ";"
+					EndFor
 					break
 				case "selectAll_Right":
 					roiSelWave = 1
+					For(i=0;i<DimSize(roiListWave,0);i+=1)
+						ROIListStr += roiListWave[i] + ";"
+					EndFor
 					break
 			endswitch
 		break
