@@ -3025,7 +3025,7 @@ Function deleteGridROI(ROIListWave,ROIListSelWave)
 	
 	For(i=0;i<ItemsInList(objectList,",");i+=1)
 		Wave theROI = $("root:twoP_ROIS:" + StringFromList(i,roiList,","))
-		If(!WaveExists(theROI))
+		If(WaveExists(theROI))
 			ReallyKillWaves(theROI)
 		EndIf
 	EndFor
@@ -3046,12 +3046,12 @@ Function deleteROI(list)
 	
 	For(i=size-1;i>-1;i-=1)//count down
 		Wave/Z theROI = $("root:twoP_ROIS:" + StringFromList(i,list,",") + "_y")
-		If(!WaveExists(theROI))
+		If(WaveExists(theROI))
 			ReallyKillWaves(theROI)
 		EndIf
 		Wave/Z theROI = $("root:twoP_ROIS:" + StringFromList(i,list,",") + "_x")
-		If(!WaveExists(theROI))
-			ReallyKillWaves(theROI)
+		If(WaveExists(theROI))
+			GUIPKillDisplayedWave(theROI)
 		EndIf
 		index = tableMatch(StringFromList(i,list,","),ROIListWave)
 		If(index != -1)
