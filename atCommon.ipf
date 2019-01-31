@@ -3051,7 +3051,7 @@ Function deleteROI(list)
 		EndIf
 		Wave/Z theROI = $("root:twoP_ROIS:" + StringFromList(i,list,",") + "_x")
 		If(WaveExists(theROI))
-			GUIPKillDisplayedWave(theROI)
+			ReallyKillWaves(theROI)
 		EndIf
 		index = tableMatch(StringFromList(i,list,","),ROIListWave)
 		If(index != -1)
