@@ -3633,8 +3633,8 @@ Function/S resolveCmdLine(cmdLineStr,wsn,wsi)
 	//numWaveSets = GetNumWaveSets(S_Value)
 	//wsDims = GetWaveSetDims(S_Value)
 	
-	String left = "",right = "",dsName="",char="",outStr="",tempStr=""
-	Variable pos1,pos2,numChars,i
+	String left = "",right = "",dsName="",char="",outStr="",tempStr="",indexStr=""
+	Variable pos1,pos2,pos3,pos4,numChars,i,index,wsnIndex,wsiIndex
 	
 	//Divide into left and right sides of an equals sign
 	left = StringFromList(0,cmdLineStr,"=")
@@ -3642,22 +3642,72 @@ Function/S resolveCmdLine(cmdLineStr,wsn,wsi)
 
 	
 	pos1 = 0;pos2 = 0
+	pos3 = 0;pos4 = 0
 	outStr = ""
 	Do
 		pos1 = strsearch(cmdLineStr,"<",0)
 		pos2 = strsearch(cmdLineStr,">",pos1)
 		
+		
 		//If a valid data set syntax was found
 		If(pos1 != -1 && pos2 != -1)
+			//test for wsi specifier { } directly after the dataset specifier
+			If(!cmpstr(cmdLineStr[pos2+1],"{"))
+				pos3 = pos2+1
+				pos4 = strsearch(cmdLineStr,"}",pos3)
+			Else
+				pos3 = -1
+				pos4 = -1
+			EndIf
+			
 			dsName = cmdLineStr[pos1+1,pos2-1]
 			Wave/T/Z ds = GetDataSetWave(dsName=dsName)
-			
-			String theWaveSet = GetWaveSet(dsName,wsn=wsn)
-			String theWaveStr = StringFromList(wsi,theWaveSet,";")
+				
+			If(pos3 != -1 && pos2 != -1)
+				//set pos2 to after the waveset specifier for proper string trimming
+				pos2 = pos4
+				
+				//wsi specifier
+				indexStr = cmdLineStr[pos3+1,pos4-1]
+				
+				//resolve wsn
+				tempStr = StringFromList(0,indexStr,",")
+				
+				If(cmpstr(tempStr,"*"))
+					wsnIndex = str2num(tempStr)
+					If(numtype(wsnIndex) == 2)//invalid index number
+						outStr = ""
+						return outStr
+					EndIf
+				Else
+					wsnIndex = wsn
+				EndIf
+				
+				//resolve wsi
+				tempStr = StringFromList(1,indexStr,",")
+				
+				If(cmpstr(tempStr,"*"))
+					wsiIndex = str2num(tempStr)
+					If(numtype(wsnIndex) == 2)//invalid index number
+						outStr = ""
+						return outStr
+					EndIf
+				Else
+					wsnIndex = wsi
+				EndIf
+				
+				String theWaveSet = GetWaveSet(dsName,wsn=wsnIndex)
+				String theWaveStr = StringFromList(wsnIndex,theWaveSet,";")
+				
+			Else
+				//No wsi specifier
+				theWaveSet = GetWaveSet(dsName,wsn=wsn)
+				theWaveStr = StringFromList(wsi,theWaveSet,";")
+			EndIf
 			
 			//section of string that isn't a data set reference
 			tempStr = cmdLineStr[0,pos1-1]
-			
+
 			//insert into wave name the output command string
 			outStr += tempStr + theWaveStr
 			

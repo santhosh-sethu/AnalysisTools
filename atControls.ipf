@@ -67,7 +67,7 @@ Function atButtonProc(ba) : ButtonControl
 								For(i=1;i<ItemsInList(dsRefList,";");i+=1)
 									String testDims = GetWaveSetDims(StringFromList(i,dsRefList,";"))
 									If(cmpstr(testDims,dims))
-										Abort "Data sets must have the same dimensions"
+									//	Abort "Data sets must have the same dimensions"
 									EndIf
 								EndFor		
 								
