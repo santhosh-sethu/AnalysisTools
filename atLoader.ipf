@@ -380,6 +380,7 @@ Function LoadAnalysisSuite([left,top])
 	SetVariable seriesName win=analysis_tools,pos={140,50},size={50,20},title="Se",value=_STR:"",disable=1
 	SetVariable sweepName win=analysis_tools,pos={200,50},size={50,20},title="Sw",value=_STR:"",disable=1
 	SetVariable traceName win=analysis_tools,pos={260,50},size={50,20},title="T",value=_STR:"",disable=1
+	Checkbox killOriginals win=analysis_tools,pos={20,70},size={100,20},title="Kill Originals",value=0,disable=1
 	
 	//Load PClamp
 	Button OpenABF2Loader win=analysis_tools,pos={71,66},size={150,20},title="Open PClamp Loader",disable=1,proc=atButtonProc
@@ -600,7 +601,7 @@ Function CreateControlLists(cmdList)
 	//Duplicate/Rename
 	String/G root:Packages:analysisTools:ctrlList_duplicateRename
 	SVAR ctrlList_duplicateRename = root:Packages:analysisTools:ctrlList_duplicateRename
-	ctrlList_duplicateRename = "extFuncDS;extFuncChannelPop;extFuncDSListBox;prefixName;groupName;SeriesName;SweepName;TraceName"
+	ctrlList_duplicateRename = "extFuncDS;extFuncChannelPop;extFuncDSListBox;prefixName;groupName;SeriesName;SweepName;TraceName;killOriginals;"
 	
 	//Space-Time dF
 	String/G root:Packages:analysisTools:ctrlList_spacetimeDF

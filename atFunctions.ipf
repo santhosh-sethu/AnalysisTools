@@ -5229,6 +5229,9 @@ Function duplicateRename()
 	posList = "0;1;2;3;4"
 	ctrlList = "prefixName;groupName;seriesName;sweepName;traceName"
 	
+	ControlInfo/W=analysis_tools killOriginals
+	Variable killOriginals = V_Value
+	
 	//Finds the wave paths for analysis
 	theWaveList = getWaveNames()
 	numWaves = ItemsInList(theWaveList,";")
@@ -5266,6 +5269,10 @@ Function duplicateRename()
 		EndIf
 		
 		Duplicate/O theWave,$newName
+		
+		If(killOriginals)
+			ReallyKillWaves(theWave)
+		EndIf
 	EndFor
 
 End

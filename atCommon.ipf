@@ -2132,6 +2132,8 @@ Function fillROITable(roiTable)
 	If(!WaveExists(roiTable))
 		Make/O/T/N=(size) roiTable
 		Wave/T roiTable = roiTable
+	Else
+		Redimension/N=(size) roiTable
 	EndIf
 	
 	Variable i
@@ -3595,12 +3597,14 @@ Function selectALL(control,mode)
 			strswitch(control)
 				case "selectAll_Left":
 					scanSelWave = 1
+					scanListStr = ""
 					For(i=0;i<DimSize(scanListWave,0);i+=1)
 						scanListStr += scanListWave[i] + ";"
 					EndFor
 					break
 				case "selectAll_Right":
 					roiSelWave = 1
+					ROIListStr = ""
 					For(i=0;i<DimSize(roiListWave,0);i+=1)
 						ROIListStr += roiListWave[i] + ";"
 					EndFor

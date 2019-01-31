@@ -803,10 +803,18 @@ Function atPopProc(pa) : PopupMenuControl
 							DrawText/W=analysis_tools 175,100,"Waves:"
 							OpenExtFuncWaveListBox(S_Value)
 						EndIf
-					ElseIf(!cmpstr(pa.popStr,"Average") || !cmpstr(pa.popStr,"Error") || !cmpstr(pa.popStr,"Kill Waves")  || !cmpstr(pa.popStr,"Run Cmd Line"))
-						Wave/Z/T dataSetNames = root:Packages:analysisTools:DataSets:dataSetNames
-						SVAR DSNames = root:Packages:analysisTools:DSNames
-						DSNames = "--None--;--Scan List--;--Item List--;" + textWaveToStringList(dataSetNames,";")		
+					Else
+						strswitch(pa.popStr)
+							case "Average":
+							case "Error":
+							case "Kill Waves":
+							case "Run Cmd Line":
+							case "Duplicate/Rename":
+								Wave/Z/T dataSetNames = root:Packages:analysisTools:DataSets:dataSetNames
+								SVAR DSNames = root:Packages:analysisTools:DSNames
+								DSNames = "--None--;--Scan List--;--Item List--;" + textWaveToStringList(dataSetNames,";")		
+								break
+						endswitch
 					EndIf
 					
 					break
