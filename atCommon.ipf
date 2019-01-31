@@ -3025,7 +3025,9 @@ Function deleteGridROI(ROIListWave,ROIListSelWave)
 	
 	For(i=0;i<ItemsInList(objectList,",");i+=1)
 		Wave theROI = $("root:twoP_ROIS:" + StringFromList(i,roiList,","))
-		ReallyKillWaves(theROI)
+		If(!WaveExists(theROI))
+			ReallyKillWaves(theROI)
+		EndIf
 	EndFor
 	
 End
@@ -3044,11 +3046,13 @@ Function deleteROI(list)
 	
 	For(i=size-1;i>-1;i-=1)//count down
 		Wave/Z theROI = $("root:twoP_ROIS:" + StringFromList(i,list,",") + "_y")
-		ReallyKillWaves(theROI)
-		
+		If(!WaveExists(theROI))
+			ReallyKillWaves(theROI)
+		EndIf
 		Wave/Z theROI = $("root:twoP_ROIS:" + StringFromList(i,list,",") + "_x")
-		ReallyKillWaves(theROI)
-		
+		If(!WaveExists(theROI))
+			ReallyKillWaves(theROI)
+		EndIf
 		index = tableMatch(StringFromList(i,list,","),ROIListWave)
 		If(index != -1)
 			DeletePoints/M=0 index,1,ROIListWave,ROIListSelWave
@@ -3072,23 +3076,23 @@ Function ReallyKillWaves(w)
     	graph = "twoPscanGraph#GCH1"
     	traces=TraceNameList(graph,";",3)
     	if(whichlistitem(name,traces) != -1) // Assumes that each wave is plotted at most once on a graph.  
-      	RemoveFromGraph /W=$graph $name
+      	RemoveFromGraph/Z /W=$graph $name
     	endif
     	graph = "twoPscanGraph#GCH2"
     	traces=TraceNameList(graph,";",3)
     	if(whichlistitem(name,traces) != -1) // Assumes that each wave is plotted at most once on a graph.  
-      	RemoveFromGraph /W=$graph $name
+      	RemoveFromGraph/Z /W=$graph $name
     	endif
     	graph = "twoPscanGraph#GMRG"
     	traces=TraceNameList(graph,";",3)
     	if(whichlistitem(name,traces) != -1) // Assumes that each wave is plotted at most once on a graph.  
-      	RemoveFromGraph /W=$graph $name
+      	RemoveFromGraph/Z /W=$graph $name
     	endif	
     Else
     	traces=TraceNameList(graph,";",3)
     
 	    if(whichlistitem(name,traces) != -1) // Assumes that each wave is plotted at most once on a graph.  
-	      RemoveFromGraph /W=$graph $name
+	      RemoveFromGraph/Z /W=$graph $name
 	    endif
 	 EndIf 
   endfor
