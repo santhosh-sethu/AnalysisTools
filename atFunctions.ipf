@@ -90,13 +90,13 @@ Function/WAVE GetFolderItems([depth])
 	
 	//Match list
 	itemList = ReplaceString(";",StringFromList(1,DataFolderDir(2),":"),"")
-	itemList = TrimString(itemList)
-	itemList = ListMatch(itemList,waveMatchStr,",")
+	//itemList = TrimString(itemList)
+	//itemList = ListMatch(itemList,waveMatchStr,",")
 	
 	//Not match list
-	If(strlen(waveNotMatchStr))
-		itemList = ListMatch(itemList,"!*" + waveNotMatchStr,",")
-	EndIf
+	//If(strlen(waveNotMatchStr))
+	//	itemList = ListMatch(itemList,"!*" + waveNotMatchStr,",")
+	//EndIf
 	
 	Redimension/N=(ItemsInList(itemList,",")) waveListTable,selWave
 	
@@ -1581,13 +1581,45 @@ Function gridROI()//theMask,size)
 	If(!DataFolderExists("root:ROI_analysis:grid"))
 		NewDataFolder root:ROI_analysis:grid
 	EndIf
-	Make/O/N=(xSteps,ySteps) root:ROI_analysis:grid:grid_ROIMask
-	Wave grid_ROIMask = root:ROI_analysis:grid:grid_ROIMask
+	
+	If(overwrite)	
+		Make/O/N=(xSteps,ySteps) root:ROI_analysis:grid:grid_ROIMask
+		Wave grid_ROIMask = root:ROI_analysis:grid:grid_ROIMask
+	Else
+		If(WaveExists(root:ROI_analysis:grid:grid_ROIMask))
+			String gridName = "root:ROI_analysis:grid:" + UniqueName("grid_ROIMask",1,0)
+			Make/O/N=(xSteps,ySteps) $gridName
+			Wave grid_ROIMask = $gridName
+		Else
+			Make/O/N=(xSteps,ySteps) root:ROI_analysis:grid:grid_ROIMask
+			Wave grid_ROIMask = root:ROI_analysis:grid:grid_ROIMask
+		EndIf
+	EndIf
+	
+	
 	
 	Variable gridX,gridY
 	
 	SetDataFolder root:twoP_ROIS
-	count = 0
+	
+	//If not overwriting, find pre-existing grid ROIs and get the largest grid index
+	Variable maxIndex = 0
+	If(!overwrite)
+		For(i=0;i<DimSize(ROIListWave,0);i+=1)
+			String theROI = ROIListWave[i]
+			If(stringmatch(theROI,"grid*"))
+				Variable gridIndex = str2num(theROI[4,strlen(theROI)-1])
+				If(gridIndex > maxIndex)
+					maxIndex = gridIndex
+				EndIf
+			EndIf
+		EndFor
+		
+		count = maxIndex + 1
+	Else
+		count = 0
+	EndIf
+	
 	gridX = 0
 	
 	If(optimizePos)

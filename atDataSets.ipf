@@ -131,7 +131,7 @@ Function addDataSet(dataSetName,[selection])
 	//Does the data set name already exist?
 	//If so, return
 	If(tableMatch(dataSetName,dataSetNames) != -1)
-		return -1
+		
 	EndIf
 	
 		
@@ -170,12 +170,20 @@ Function addDataSet(dataSetName,[selection])
 		
 		
 		//Add the DS name to the list wave
-		currentNumSets = DimSize(dataSetNames,0)
-		Redimension/N=(currentNumSets+1) dataSetNames,dataSetSelWave
+	
+		//Does the data set name already exist?
+		If(tableMatch(dataSetName,dataSetNames) != -1)
+			currentNumSets = DimSize(dataSetNames,0)			
+			dataSetNames[currentNumSets-1] = dataSetName
+			ListBox dataSetListBox win=analysis_tools,selrow=currentNumSets
+		Else
+			currentNumSets = DimSize(dataSetNames,0)
+			Redimension/N=(currentNumSets+1) dataSetNames,dataSetSelWave
+			
+			dataSetNames[currentNumSets] = dataSetName
+			ListBox dataSetListBox win=analysis_tools,selrow=currentNumSets+1
+		EndIf
 		
-		dataSetNames[currentNumSets] = dataSetName
-		ListBox dataSetListBox win=analysis_tools,selrow=currentNumSets+1
-
 		fillFilterTable()
 		
 		//Reload the data set names

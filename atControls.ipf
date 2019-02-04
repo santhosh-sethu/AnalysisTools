@@ -129,10 +129,22 @@ Function atButtonProc(ba) : ButtonControl
 					break
 				case "atBrowseBackButton":
 					String parentDF = ParseFilePath(1,cdf,":",1,0)
+					String childDF = ParseFilePath(0,cdf,":",1,0)
+					
+					
 					SetDataFolder parentDF
 					cdf = parentDF
 					GetFolderListItems()
 					GetFolderItems()
+					
+					Wave/T folderTable = root:Packages:analysisTools:folderTable
+					Variable index = tableMatch(childDF,folderTable)
+					
+					Wave selFolderWave = root:Packages:analysisTools:selFolderWave
+					selFolderWave = 0
+					If(index != -1)
+						selFolderWave[index] = 1
+					EndIf
 					ControlUpdate AT_cdf
 					break
 				case "nudgeROI":
@@ -231,7 +243,7 @@ Function atButtonProc(ba) : ButtonControl
 					fillFilterTable()
 					
 					Wave/T dsFilters = root:Packages:analysisTools:DataSets:dsFilters
-					Variable index = tableMatch(S_Value,dsFilters)
+					index = tableMatch(S_Value,dsFilters)
 					dsFilters[index][1] = getListRange("0-1",dsFilters[index][1],";") + ";;;;;;"
 					
 					break
@@ -348,6 +360,7 @@ Function atListBoxProc(lba) : ListBoxControl
 		case -1: // control being killed
 			break
 		case 1: // mouse down
+		
 			break
 		case 2: // mouse up
 			strswitch(lba.ctrlName)
@@ -745,7 +758,11 @@ Function atPopProc(pa) : PopupMenuControl
 	SVAR currentCmd = root:Packages:analysisTools:currentCmd
 	SVAR prevCmd = root:Packages:analysisTools:prevCmd
 	SVAR runCmdStr = root:Packages:analysisTools:runCmdStr
+	
+	
+	
 	switch( pa.eventCode )
+
 		case 2: // mouse up
 		
 			strswitch(pa.ctrlName)
@@ -800,7 +817,7 @@ Function atPopProc(pa) : PopupMenuControl
 							EndIf
 							
 							SetDrawEnv/W=analysis_tools fsize=12,xcoord=abs,ycoord=abs
-							DrawText/W=analysis_tools 175,100,"Waves:"
+							DrawText/W=analysis_tools 230,117,"Waves:"
 							OpenExtFuncWaveListBox(S_Value)
 						EndIf
 					Else
