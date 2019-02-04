@@ -90,7 +90,7 @@ Function/WAVE GetFolderItems([depth])
 	
 	//Match list
 	itemList = ReplaceString(";",StringFromList(1,DataFolderDir(2),":"),"")
-	//itemList = TrimString(itemList)
+	itemList = TrimString(itemList)
 	//itemList = ListMatch(itemList,waveMatchStr,",")
 	
 	//Not match list
