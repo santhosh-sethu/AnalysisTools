@@ -521,9 +521,8 @@ Function similarityIndex()
 	//sIndex = (1 - (abs(entry - turn)/turn)) - (1-(abs(exit - turn)/turn))
 End
 
-Window stimPosPanel() : Panel
-	PauseUpdate; Silent 1		// building window...
-	NewPanel /K=1 /W=(1978,133,2178,843) as "Stimulus Position"
+Function stimPosPanel()
+	NewPanel /K=1 /W=(1978,133,2178,843)/N=stimPos as "Stimulus Position"
 	ModifyPanel fixedSize=1
 	SetDrawLayer UserBack
 	SetDrawEnv xcoord= rel,ycoord= abs,fsize= 10,textxjust= 1
@@ -534,43 +533,24 @@ Window stimPosPanel() : Panel
 	DrawText 0.5,420,"Projector/StimGen"
 	CheckBox horizontalFlip,pos={10.00,620.00},size={60.00,16.00},proc=stimPosCheckProc,title=" Horizontal"
 	CheckBox horizontalFlip,font="Arial",value= 0
-	SetVariable xPos,pos={100.00,610.00},size={60.00,14.00},proc=stimPosVarProc,title="X"
-	SetVariable xPos,font="Arial"
-	SetVariable xPos,value= root:Packages:twoP:Acquire:positionMarkerX[0]
-	SetVariable yPos,pos={100.00,630.00},size={60.00,14.00},proc=stimPosVarProc,title="Y"
-	SetVariable yPos,font="Arial"
-	SetVariable yPos,value= root:Packages:twoP:Acquire:positionMarkerY[0]
-	SetVariable xStagePos,pos={65.00,650.00},size={95.00,14.00},proc=stimPosVarProc,title="Stage X"
-	SetVariable xStagePos,font="Arial",value= _NUM:55
-	SetVariable yStagePos,pos={65.00,670.00},size={95.00,14.00},proc=stimPosVarProc,title="Stage Y"
-	SetVariable yStagePos,font="Arial",value= _NUM:4
-	ValDisplay stageOffsetX,pos={65.00,690.00},size={80.00,15.00},title="Offset  X="
-	ValDisplay stageOffsetX,font="Arial",fSize=10,frame=0,fStyle=2
-	ValDisplay stageOffsetX,valueBackColor=(0,0,0,0),limits={0,0,0},barmisc={0,1000}
-	ValDisplay stageOffsetX,value= #"root:Packages:twoP:Acquire:positionMarkerX[0] + root:Packages:twoP:Acquire:stageMarkerX[0]"
-	ValDisplay stageOffsetY,pos={145.00,690.00},size={50.00,15.00},title="Y="
-	ValDisplay stageOffsetY,font="Arial",fSize=10,frame=0,fStyle=2
-	ValDisplay stageOffsetY,valueBackColor=(0,0,0,0),limits={0,0,0},barmisc={0,1000}
-	ValDisplay stageOffsetY,value= #"root:Packages:twoP:Acquire:positionMarkerY[0] + root:Packages:twoP:Acquire:stageMarkerY[0]"
+	
+	Make/O/N=4 root:Packages:analysisTools:markerX,root:Packages:analysisTools:markerY
+	Wave markerX = root:Packages:analysisTools:markerX
+	Wave markerY = root:Packages:analysisTools:markerY
+	markerX = {150,0,-150,0}
+	markerY = {0,150,0,-150}
+	
 	String fldrSav0= GetDataFolder(1)
-	SetDataFolder root:Packages:twoP:Acquire:
+	SetDataFolder root:Packages:analysisTools
+
 	Display/W=(10,20,190,200)/HOST=# /L=VertCrossing/B=HorizCrossing markerX vs markerY
-	AppendToGraph/L=VertCrossing/B=HorizCrossing positionMarkerDICY vs positionMarkerDICX
-	AppendToGraph/L=VertCrossing/B=HorizCrossing stageMarkerDICX vs stageMarkerDICY
-	SetDataFolder fldrSav0
+
 	ModifyGraph margin(left)=7,margin(bottom)=7,margin(top)=7,margin(right)=7,gfSize=8
-	ModifyGraph mode=3
-	ModifyGraph marker=19
-	ModifyGraph rgb=(0,0,0)
-	ModifyGraph msize=5
+	ModifyGraph mode=3,marker=19,rgb=(0,0,0),msize=5,standoff=0,axThick=0.5,btLen=2
+	ModifyGraph freePos(VertCrossing)={0,HorizCrossing},freePos(HorizCrossing)={0,VertCrossing}
 	ModifyGraph rgb(markerX[0])=(52428,52425,1),rgb(markerX[1])=(16385,28398,65535)
-	ModifyGraph rgb(markerX[2])=(65535,0,0),rgb(markerX[3])=(2,39321,1),marker(positionMarkerDICY[0])=8
-	ModifyGraph mrkThick(positionMarkerDICY[0])=1
-	ModifyGraph standoff=0
-	ModifyGraph axThick=0.5
-	ModifyGraph btLen=2
-	ModifyGraph freePos(VertCrossing)={0,HorizCrossing}
-	ModifyGraph freePos(HorizCrossing)={0,VertCrossing}
+	ModifyGraph rgb(markerX[2])=(65535,0,0),rgb(markerX[3])=(2,39321,1)
+	
 	SetAxis VertCrossing 250,-250
 	SetAxis HorizCrossing 250,-250
 	SetDrawLayer UserFront
@@ -586,25 +566,15 @@ Window stimPosPanel() : Panel
 	DrawText 0,220,"0°"
 	RenameWindow #,DIC
 	SetActiveSubwindow ##
-	String fldrSav1= GetDataFolder(1)
-	SetDataFolder root:Packages:twoP:Acquire:
+	
 	Display/W=(10,220,190,400)/HOST=# /L=VertCrossing/B=HorizCrossing markerX vs markerY
-	AppendToGraph/L=VertCrossing/B=HorizCrossing positionMarkerDICY vs positionMarkerDICX
-	AppendToGraph/L=VertCrossing/B=HorizCrossing stageMarkerDICX vs stageMarkerDICY
-	SetDataFolder fldrSav1
+
 	ModifyGraph margin(left)=7,margin(bottom)=7,margin(top)=7,margin(right)=7,gfSize=8
-	ModifyGraph mode=3
-	ModifyGraph marker=19
-	ModifyGraph rgb=(0,0,0)
-	ModifyGraph msize=5
+	ModifyGraph mode=3,marker=19,rgb=(0,0,0),msize=5,standoff=0,axThick=0.5,btLen=2
+	ModifyGraph freePos(VertCrossing)={0,HorizCrossing},freePos(HorizCrossing)={0,VertCrossing}
 	ModifyGraph rgb(markerX[0])=(52428,52425,1),rgb(markerX[1])=(16385,28398,65535)
-	ModifyGraph rgb(markerX[2])=(65535,0,0),rgb(markerX[3])=(2,39321,1),marker(positionMarkerDICY[0])=8
-	ModifyGraph mrkThick(positionMarkerDICY[0])=1
-	ModifyGraph standoff=0
-	ModifyGraph axThick=0.5
-	ModifyGraph btLen=2
-	ModifyGraph freePos(VertCrossing)={0,HorizCrossing}
-	ModifyGraph freePos(HorizCrossing)={0,VertCrossing}
+	ModifyGraph rgb(markerX[2])=(65535,0,0),rgb(markerX[3])=(2,39321,1)
+	
 	SetAxis VertCrossing 250,-250
 	SetAxis HorizCrossing -250,250
 	SetDrawLayer UserFront
@@ -620,25 +590,14 @@ Window stimPosPanel() : Panel
 	DrawText 0,220,"0°"
 	RenameWindow #,twoP
 	SetActiveSubwindow ##
-	String fldrSav2= GetDataFolder(1)
-	SetDataFolder root:Packages:twoP:Acquire:
+	
 	Display/W=(10,420,190,600)/HOST=# /L=VertCrossing/B=HorizCrossing markerY vs markerX
-	AppendToGraph/L=VertCrossing/B=HorizCrossing positionMarkerY vs positionMarkerX
-	AppendToGraph/L=VertCrossing/B=HorizCrossing stageMarkerY vs stageMarkerX
-	SetDataFolder fldrSav2
+
 	ModifyGraph margin(left)=7,margin(bottom)=7,margin(top)=7,margin(right)=7,gfSize=8
-	ModifyGraph mode=3
-	ModifyGraph marker=19
-	ModifyGraph rgb=(0,0,0)
-	ModifyGraph msize=5
+	ModifyGraph mode=3,marker=19,rgb=(0,0,0),msize=5,standoff=0,axThick=0.5,btLen=2
+	ModifyGraph freePos(VertCrossing)={0,HorizCrossing},freePos(HorizCrossing)={0,VertCrossing}
 	ModifyGraph rgb(markerY[0])=(52428,52425,1),rgb(markerY[1])=(16385,28398,65535)
-	ModifyGraph rgb(markerY[2])=(65535,0,0),rgb(markerY[3])=(2,39321,1),marker(positionMarkerY[0])=8
-	ModifyGraph mrkThick(positionMarkerY[0])=1
-	ModifyGraph standoff=0
-	ModifyGraph axThick=0.5
-	ModifyGraph btLen=2
-	ModifyGraph freePos(VertCrossing)={0,HorizCrossing}
-	ModifyGraph freePos(HorizCrossing)={0,VertCrossing}
+	ModifyGraph rgb(markerY[2])=(65535,0,0),rgb(markerY[3])=(2,39321,1)
 	SetAxis VertCrossing 250,-250
 	SetAxis HorizCrossing -250,250
 	SetDrawLayer UserFront
@@ -654,7 +613,24 @@ Window stimPosPanel() : Panel
 	DrawText 0,220,"90°"
 	RenameWindow #,Projector
 	SetActiveSubwindow ##
-EndMacro
+End
+
+Function stimPosCheckProc(cba) : CheckBoxControl
+	STRUCT WMCheckboxAction &cba
+	
+		switch( cba.eventCode )
+			case 2: // mouse up
+				Variable checked = cba.checked
+				If(checked)
+					SetAxis/W=stimPos#twoP HorizCrossing 250,-250
+				Else
+					SetAxis/W=stimPos#twoP HorizCrossing -250,250
+				EndIf
+				break
+			case -1: // control being killed
+				break
+		endswitch
+End
 
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
