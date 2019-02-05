@@ -1721,6 +1721,8 @@ Function filterROI()
 	ControlInfo/W=analysis_tools thresholdType
 	String thresholdType = S_Value
 	
+	
+	
 	For(i=0;i<numROIs;i+=1)
 		//get the ROI name
 		theROI = StringFromList(i,ROIListStr,";")
@@ -1734,18 +1736,29 @@ Function filterROI()
 			strswitch(channel)
 				case "ch1":
 				case "ch2":
-					theName += "dF"
+					String suffix = "dF"
 					break
 				case "ratio":
-					theName += "dGR"
+					suffix = "dGR"
 					break
 			endswitch
+			theName += suffix
 			
 			//Does the wave exist?
 			Wave/Z theWave = $theName
 			If(!WaveExists(theWave))
-				print "ERROR: Couldn't find the wave: " + theName
-				continue
+				//try unbuffering scan list zeros to get the correct name
+				String str = StringFromList(1,theScanName,"_")
+				str = num2str(str2num(str))
+				theScanName = RemoveListItem(1,theScanName,"_")
+				theScanName = AddListItem(str,theScanName,"_",1)
+				theScanName = RemoveEnding(theScanName,"_")
+				theName = "root:ROI_analysis:" + "ROI" + theROI + ":" + theScanName + "_" + channel + "_" + "ROI" + theROI + "_" + suffix
+				Wave/Z theWave = $theName
+				If(!WaveExists(theWave))
+					print "ERROR: Couldn't find the wave: " + theName
+					continue
+				EndIf
 			EndIf
 			
 			strswitch(thresholdType)
@@ -1791,12 +1804,41 @@ Function filterROI()
 		print "All ROIs passed the threshold"
 	EndIf
 	
+	print "\nThe following ROIs didn't reach threshold:\n" + list
+	
 	If(V_flag == 1)
 	//yes clicked
-		deleteROI(list)
+		deleteROI(list=list)
+		//Remove deleted ROIs from ROIListStr automatically
+		For(i=ItemsInList(list,",");i>-1;i-=1)//count down
+			theROI = StringFromList(i,list,",")
+			ROIListStr = RemoveFromList(theROI,ROIListStr,";")
+		EndFor
 	ElseIf(V_flag == 2)
-	//no clicked
-	
+	//no clicked, mark the ROIs as a different color on twoPScanGraph. Yellow.
+		
+		//Try the different channels for ROI traces
+		String traceList = TraceNameList("twoPscanGraph#GCH1",";",3)
+		If(!strlen(traceList))
+			traceList = TraceNameList("twoPscanGraph#GCH2",";",3)
+			String theGraph = "twoPscanGraph#GCH2"
+		Else
+			theGraph = "twoPscanGraph#GCH1"
+		EndIf
+		
+		If(!strlen(traceList))
+			traceList = TraceNameList("twoPscanGraph#GMRG",";",3)
+			theGraph = "twoPscanGraph#GMRG"
+		EndIf
+		
+		//Set all colors to cyan
+		ModifyGraph/W=$theGraph rgb=(0,65535,65535)
+		
+		//set marked ROIs to yellow
+		For(i=0;i<ItemsInList(list,",");i+=1)
+			theROI = StringFromList(i,list,",") + "_y"
+			ModifyGraph/W=$theGraph rgb($theROI)=(65535,65535,0)
+		EndFor
 	EndIf
 End
 
@@ -1943,8 +1985,19 @@ Function displayROIs()
 				EndIf
 			EndIf
 			
-			Path = "root:ROI_analysis:ROI" + ROI + ":" + Scan + "_ch1_ROI" + ROI + "_dF"
-			//Path = "root:ROI_analysis:ROI" + ROI + ":" + Scan + "_ratio_ROI" + ROI + "_dGR"
+			String channel = getChannel(1)
+			channel = RemoveEnding(channel,";")
+			strswitch(channel)
+				case "ch1":
+				case "ch2":
+					String suffix = "dF"
+					break
+				case "ratio":
+					suffix = "dGR"
+					break
+			endswitch
+			
+			Path = "root:ROI_analysis:ROI" + ROI + ":" + Scan + "_" + channel + "_ROI" + ROI + "_" + suffix
 			
 			If(doAverages)
 				Path += "_avg"
@@ -1953,7 +2006,20 @@ Function displayROIs()
 			Wave theWave = $Path
 			
 			If(!WaveExists(theWave))
-				continue
+				//try wave name without buffered zeros, in case they have been removed
+				String str = StringFromList(1,Scan,"_")
+				str = num2str(str2num(str)) // unbuffer zeros
+				Scan = RemoveListItem(1,Scan,"_")
+				Scan = AddListItem(str,Scan,"_",1)
+				Scan = RemoveEnding(Scan,"_")
+				
+				//New name without buffered zeros in the Scan name
+				Path = "root:ROI_analysis:ROI" + ROI + ":" + Scan + "_" + channel + "_ROI" + ROI + "_" + suffix
+				Wave theWave = $Path
+				
+				If(!WaveExists(theWave))
+					continue
+				EndIf
 			EndIf
 			
 			//Get axes names
@@ -5020,6 +5086,8 @@ Function AverageWaves()
 	EndFor
 	outWave /= numWaves
 	SetScale/P x,DimOffset(theWave,0),DimDelta(theWave,0),outWave
+	SetScale/P y,DimOffset(theWave,1),DimDelta(theWave,1),outWave
+	SetScale/P z,DimOffset(theWave,2),DimDelta(theWave,2),outWave
 	
 	outputDS(outWave)
 End
@@ -5069,6 +5137,8 @@ Function ErrorWaves()
 	EndFor
 	tempAvg /= numWaves
 	SetScale/P x,DimOffset(theWave,0),DimDelta(theWave,0),outWave
+	SetScale/P y,DimOffset(theWave,1),DimDelta(theWave,1),outWave
+	SetScale/P z,DimOffset(theWave,2),DimDelta(theWave,2),outWave
 	
 	//SEM calculation
 	strswitch(error)

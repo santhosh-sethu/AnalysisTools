@@ -3044,8 +3044,15 @@ Function deleteGridROI(ROIListWave,ROIListSelWave)
 End
 
 //input a list of ROIs to delete
-Function deleteROI(list)
+Function deleteROI([list])
 	String list
+	
+	If(ParamIsDefault(list))
+		SVAR ROIListStr = root:Packages:twoP:examine:ROIListStr
+		list = ROIListStr
+		list = switchSeparator(list,";",",")
+	EndIf
+	
 	Wave/T ROIListWave = root:Packages:twoP:examine:ROIListWave
 	Wave ROIListSelWave = root:Packages:twoP:examine:ROIListSelWave
 	
@@ -3070,6 +3077,16 @@ Function deleteROI(list)
 		EndIf
 	EndFor
 	
+End
+
+//Changes the separator string in a list
+Function/S switchSeparator(list,inSeparator,outSeparator)
+	String list,inSeparator,outSeparator
+	String outList
+	
+	outList = ReplaceString(inSeparator,list,outSeparator)
+	return outList
+
 End
 
 Function ReallyKillWaves(w)

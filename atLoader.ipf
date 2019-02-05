@@ -163,7 +163,7 @@ Function LoadAnalysisSuite([left,top])
 	Make/O/T/N=(2,2) root:Packages:analysisTools:packageTable
 	Wave/T packageTable = root:Packages:analysisTools:packageTable
 	packageTable[0][0] = "Calcium Imaging"
-	packageTable[0][1] = "-------ROIs--------;MultiROI;ROI Grid;Filter ROI;Display ROIs;-------Maps-------;"
+	packageTable[0][1] = "-------ROIs--------;MultiROI;ROI Grid;Filter ROI;Display ROIs;Kill ROI;-------Maps-------;"
 	packageTable[0][1] += "df Map;Vector Sum Map;------Masks-------;Get Dendritic Mask;Mask Scan Data;"
 	packageTable[0][1] += "----Registration---;Adjust Galvo Distortion;Register Image;Rescale Scans"
 	
@@ -712,6 +712,12 @@ Function CreateControlLists(cmdList)
 	SVAR ctrlList_filterROI = root:Packages:analysisTools:ctrlList_filterROI
 	ctrlList_filterROI = "roiThreshold;thresholdType;bslnStVar;bslnEndVar;peakStVar;peakEndVar;ch1Check;ch2Check;ratioCheck" 
 	
+	//Kill ROI
+	String/G root:Packages:analysisTools:ctrlList_killROI
+	SVAR ctrlList_killROI = root:Packages:analysisTools:ctrlList_killROI
+	ctrlList_killROI = ""
+	
+	
 	//For External Functions
 	String/G root:Packages:analysisTools:ctrlList_extFunc
 	SVAR ctrlList_extFunc = root:Packages:analysisTools:ctrlList_extFunc
@@ -823,6 +829,9 @@ Function ChangeControls(currentCmd,prevCmd)
 			break
 		case "Filter ROI":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_filterROI
+			break
+		case "Kill ROI":
+			SVAR ctrlList = root:Packages:analysisTools:ctrlList_killROI
 			break
 		case "Load PClamp":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_loadPClamp
@@ -949,6 +958,10 @@ Function ChangeControls(currentCmd,prevCmd)
 		case "Filter ROI":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_filterROI
 			runCmdStr = "filterROI()"
+			break
+		case "Kill ROI":
+			SVAR ctrlList = root:Packages:analysisTools:ctrlList_killROI
+			runCmdStr = "deleteROI()"
 			break
 		case "Load PClamp":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_loadPClamp
