@@ -303,7 +303,7 @@ Function LoadAnalysisSuite([left,top])
 	ModifyPanel/W=analysis_tools#scanListPanel frameStyle=0
 	ListBox/Z WaveListBox win=analysis_tools#scanListPanel,size={140,500-65},pos={0,30},mode=4,selWave=selWave,listWave=scanListWave,proc=atListBoxProc
 	Button selectAll_Left win=analysis_tools#scanListPanel,size={30,20},pos={0,height-40},title="ALL",proc=atButtonProc 
-	SetVariable folderDepth win=analysis_tools#scanListPanel,size={80,20},pos={40,height-38},fsize=12,limits={0,inf,1},value=_NUM:0,disable=1,title="Depth",proc=atSetVarProc
+	//SetVariable folderDepth win=analysis_tools#scanListPanel,size={80,20},pos={40,height-38},fsize=12,limits={0,inf,1},value=_NUM:0,disable=1,title="Depth",proc=atSetVarProc
 	
 	//ROI list Panel
 	ListBox/Z ROIListBox win=analysis_tools#scanListPanel,size={80,height-75},pos={150,30},mode=4,selWave=ROIListSelWave,listWave=ROIListWave,proc=atListBoxProc
@@ -432,9 +432,9 @@ Function LoadAnalysisSuite([left,top])
 	
 	//For Data Sets
 	ListBox dataSetListBox win=analysis_tools,pos={235,120},size={100,320},mode=1,listWave=dataSetNames,selWave=dataSetSelWave,disable=1,proc=atListBoxProc
-	Button addDataSet win=analysis_tools,pos={234,440},size={100,20},title="Add Data Set",disable=1,proc=atButtonProc
-	Button addDataSetFromSelection win=analysis_tools,pos={234,460},size={100,20},title="Add Selection",disable=1,proc=atButtonProc
-	Button delDataSet win=analysis_tools,pos={234,480},size={100,20},title="Del Data Set",disable=1,proc=atButtonProc
+	Button addDataSet win=analysis_tools,pos={234,440},size={100,20},title="Add/Update",disable=1,proc=atButtonProc
+	Button addDataSetFromSelection win=analysis_tools,pos={234,460},size={100,20},title="From Selection",disable=1,proc=atButtonProc
+	Button delDataSet win=analysis_tools,pos={234,480},size={100,20},title="Delete",disable=1,proc=atButtonProc
 	SetVariable dataSetName win=analysis_tools,pos={80,451},size={130,20},title="DS Name",disable=1,value=_STR:"NewDS"
 	Button matchStraddOR win=analysis_tools,pos={202,38},size={22,20},title="OR",fsize=8,disable=1,proc=atButtonProc
 	Button notMatchStraddOR win=analysis_tools,pos={202,58},size={22,20},title="OR",fsize=8,disable=1,proc=atButtonProc
@@ -1128,6 +1128,12 @@ Function ChangeControls(currentCmd,prevCmd)
 			SetDrawEnv/W=analysis_tools fsize=12,xcoord=abs,ycoord=abs
 			DrawText/W=analysis_tools 95,117,"Waves:"
 			DrawText/W=analysis_tools 255,117,"Data Sets:"
+			DrawLine/W=analysis_tools 220,449,220,471
+			DrawLine/W=analysis_tools 220,449,230,449
+			
+			SetDrawEnv/W=analysis_tools arrow= 1,arrowlen= 5.00
+			DrawLine/W=analysis_tools 220,471,230,471
+			
 			SetDrawLayer/W=analysis_tools ProgBack
 			break
 		case "Operation":

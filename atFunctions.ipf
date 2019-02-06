@@ -155,7 +155,7 @@ Function flipLists(whichList)
 			SetVariable AT_cdf win=analysis_tools#scanListPanel,disable=1
 			ListBox AT_FolderListBox win=analysis_tools#scanListPanel,size={140,500-65},pos={0,30},mode=4,listWave=folderTable,selWave=selFolderWave,proc=atListBoxProc,disable=1
 			ListBox AT_ItemListBox win=analysis_tools#scanListPanel,listWave=waveListTable,selWave=itemListSelWave,mode=4,size={80+75,500-65},proc=atListBoxProc,disable = 1
-			SetVariable folderDepth win=analysis_tools#scanListPanel,disable=1
+			//SetVariable folderDepth win=analysis_tools#scanListPanel,disable=1
 			
 			//Move the ROI list box back
 			ListBox ROIListBox win=analysis_tools#scanListPanel,pos={150,30}
@@ -192,7 +192,7 @@ Function flipLists(whichList)
 			Button atBrowseButton win=analysis_tools#scanListPanel,title="Scans"
 			SetVariable AT_cdf win=analysis_tools#scanListPanel,disable=2
 			Button atBrowseBackButton win=analysis_tools#scanListPanel,disable=0
-			SetVariable folderDepth win=analysis_tools#scanListPanel,disable=0
+			//SetVariable folderDepth win=analysis_tools#scanListPanel,disable=0
 			
 			//Change some control assignments
 			ListBox AT_FolderListBox win=analysis_tools#scanListPanel,size={140,500-65},pos={0,30},mode=4,listWave=folderTable,selWave=selFolderWave,proc=atListBoxProc,disable=0

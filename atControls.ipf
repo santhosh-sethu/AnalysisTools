@@ -384,8 +384,8 @@ Function atListBoxProc(lba) : ListBoxControl
 		case 3: // double click
 			strswitch(lba.ctrlName)
 				case "AT_FolderListBox":
-					ControlInfo/W=analysis_tools folderDepth
-					Variable depth = V_Value
+					//ControlInfo/W=analysis_tools folderDepth
+					Variable depth = 0
 					
 					If(row > DimSize(listWave,0)-1)
 						break
@@ -567,6 +567,8 @@ Function atListBoxProc(lba) : ListBoxControl
 					Wave/T listWave = root:Packages:analysisTools:DataSets:dataSetNames
 					Wave selWave = root:Packages:analysisTools:DataSets:dataSetSelWave
 					Wave/T waveListTable = root:Packages:analysisTools:AT_waveListTable
+					Wave/T AT_WaveListTable_FullPath = root:Packages:analysisTools:AT_WaveListTable_FullPath
+					Wave/T ogAT_WaveListTable_UnGroup = root:Packages:analysisTools:DataSets:ogAT_WaveListTable_UnGroup
 					Wave matchListselWave = root:Packages:analysisTools:AT_selWave
 					
 					selection = lba.row
@@ -577,12 +579,19 @@ Function atListBoxProc(lba) : ListBoxControl
 					EndIf
 					
 					Wave/T dataSetWave = $("root:Packages:analysisTools:DataSets:DS_" + listWave[selection])
+					Wave/T ogDataSetWave = $("root:Packages:analysisTools:DataSets:ogDS_" + listWave[selection])
+					
 					UpdateDSListBox(dataSetWave)
 					
 					checkMissingWaves(listWave[selection])
 					updateWSDimText()
 					updateWSFilters()
-
+					
+					//Set full path text wave to match the wave name text wave
+					Redimension/N=(DimSize(ogDataSetWave,0)) ogAT_WaveListTable_UnGroup
+					ogAT_WaveListTable_UnGroup = ogDataSetWave
+					Redimension/N=(DimSize(dataSetWave,0)) AT_waveListTable_FullPath
+					AT_waveListTable_FullPath = dataSetWave
 					break
 				case "extFuncDSListBox":
 						Wave/T listWave = root:Packages:analysisTools:DataSets:dataSetListWave_NamesOnly
@@ -674,6 +683,10 @@ Function atListBoxProc(lba) : ListBoxControl
 					
 					selWaveList = ""
 					For(i=0;i<DimSize(theDataSet,0);i+=1)
+						If(i > DimSize(selWave,0) - 1)
+							break
+						EndIf
+						
 						If(selWave[i] == 1)
 							selWaveList += theDataSet[i] + ";"
 						
