@@ -94,6 +94,7 @@ Function atButtonProc(ba) : ButtonControl
 
 							break
 						case "External Function":
+						case "Duplicate/Rename":
 						case "Average":
 						case "Error":
 						case "Kill Waves":

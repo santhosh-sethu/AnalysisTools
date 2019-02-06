@@ -394,9 +394,10 @@ Function LoadAnalysisSuite([left,top])
 	
 	//For Operation
 	
-	SetVariable waveMatch win=analysis_tools,pos={40,40},size={162,20},fsize=10,title="Match",value=_STR:"*",disable=1,proc=atSetVarProc
-	SetVariable waveNotMatch win=analysis_tools,pos={52,60},size={150,20},fsize=10,title="Not",value=_STR:"",disable=1,proc=atSetVarProc
-	SetVariable relativeFolderMatch win=analysis_tools,pos={35,80},size={167,20},fsize=10,title=":Folder",value=_STR:"",disable=1,proc=atSetVarProc
+	SetVariable waveMatch win=analysis_tools,pos={40,40},size={162,20},fsize=10,title="Match",value=_STR:"*",help={"Matches waves in the selected folder.\rLogical 'OR' can be used via '||'"},disable=1,proc=atSetVarProc
+	SetVariable waveNotMatch win=analysis_tools,pos={52,60},size={150,20},fsize=10,title="Not",value=_STR:"",help={"Excludes matched waves in the selected folder.\rLogical 'OR' can be used via '||'"},disable=1,proc=atSetVarProc
+	String helpNote = "Target subfolder for wave matching.\r Useful if matching in multiple parent folders that each have a common subfolder structure"
+	SetVariable relativeFolderMatch win=analysis_tools,pos={35,80},size={167,20},fsize=10,title=":Folder",value=_STR:"",help={helpNote},disable=1,proc=atSetVarProc
 	getWaveMatchList()
 	
 	ListBox matchListBox win=analysis_tools,pos={5,120},size={225,320},mode=4,listWave=AT_waveListTable,selWave=AT_selWave,disable=1,proc=atListBoxProc
@@ -432,19 +433,20 @@ Function LoadAnalysisSuite([left,top])
 	
 	//For Data Sets
 	ListBox dataSetListBox win=analysis_tools,pos={235,120},size={100,320},mode=1,listWave=dataSetNames,selWave=dataSetSelWave,disable=1,proc=atListBoxProc
-	Button addDataSet win=analysis_tools,pos={234,440},size={100,20},title="Add/Update",disable=1,proc=atButtonProc
-	Button addDataSetFromSelection win=analysis_tools,pos={234,460},size={100,20},title="From Selection",disable=1,proc=atButtonProc
-	Button delDataSet win=analysis_tools,pos={234,480},size={100,20},title="Delete",disable=1,proc=atButtonProc
+	Button addDataSet win=analysis_tools,pos={234,440},size={100,20},title="Add/Update",disable=1,help={"Adds a new data set.\rUpdates it if it already exists"},proc=atButtonProc
+	Button addDataSetFromSelection win=analysis_tools,pos={234,460},size={100,20},title="From Selection",help={"Adds a new data set from the wave list in Browse mode"},disable=1,proc=atButtonProc
+	Button delDataSet win=analysis_tools,pos={234,480},size={100,20},title="Delete",help={"Delete the data set"},disable=1,proc=atButtonProc
 	SetVariable dataSetName win=analysis_tools,pos={80,451},size={130,20},title="DS Name",disable=1,value=_STR:"NewDS"
 	Button matchStraddOR win=analysis_tools,pos={202,38},size={22,20},title="OR",fsize=8,disable=1,proc=atButtonProc
 	Button notMatchStraddOR win=analysis_tools,pos={202,58},size={22,20},title="OR",fsize=8,disable=1,proc=atButtonProc
-	SetVariable waveGrouping win=analysis_tools,pos={80,471},size={130,20},title="Grouping",disable=1,value=_STR:"",proc=atSetVarProc
+	helpNote = "Organize the wave list into wave sets by the indicated underscore position.\rUses zero offset; -2 concatenates into a single wave set"
+	SetVariable waveGrouping win=analysis_tools,pos={80,471},size={130,20},title="Grouping",disable=1,value=_STR:"",help={helpNote},proc=atSetVarProc
 	
-	SetVariable prefixGroup win=analysis_tools,pos={10,491},size={40,20},title="P",disable=1,value=_STR:"",proc=atSetVarProc
-	SetVariable groupGroup win=analysis_tools,pos={50,491},size={40,20},title="G",disable=1,value=_STR:"",proc=atSetVarProc
-	SetVariable seriesGroup win=analysis_tools,pos={90,491},size={40,20},title="Se",disable=1,value=_STR:"",proc=atSetVarProc
-	SetVariable sweepGroup win=analysis_tools,pos={130,491},size={40,20},title="Sw",disable=1,value=_STR:"",proc=atSetVarProc
-	SetVariable traceGroup win=analysis_tools,pos={170,491},size={40,20},title="T",disable=1,value=_STR:"",proc=atSetVarProc
+	SetVariable prefixGroup win=analysis_tools,pos={10,491},size={40,20},title="P",disable=1,value=_STR:"",help={"Filter the wave list by the 1st underscore position"},proc=atSetVarProc
+	SetVariable groupGroup win=analysis_tools,pos={50,491},size={40,20},title="G",disable=1,value=_STR:"",help={"Filter the wave list by the 2nd underscore position"},proc=atSetVarProc
+	SetVariable seriesGroup win=analysis_tools,pos={90,491},size={40,20},title="Se",disable=1,value=_STR:"",help={"Filter the wave list by the 3rd underscore position"},proc=atSetVarProc
+	SetVariable sweepGroup win=analysis_tools,pos={130,491},size={40,20},title="Sw",disable=1,value=_STR:"",help={"Filter the wave list by the 4th underscore position"},proc=atSetVarProc
+	SetVariable traceGroup win=analysis_tools,pos={170,491},size={40,20},title="T",disable=1,value=_STR:"",help={"Filter the wave list by the 5th underscore position"},proc=atSetVarProc
 	
 	//For Rescale Scans
 	SetVariable scaleFactor win=analysis_tools,pos={125,62},size={125,20},bodywidth=40,title="Scale Factor (µm/volt)",disable=1,value=_NUM:60
