@@ -193,6 +193,7 @@ Function LoadAnalysisSuite([left,top])
 	Wave/T AT_waveListTable = root:Packages:analysisTools:AT_waveListTable
 	Make/O/T/N=1 root:Packages:analysisTools:AT_WaveListTable_FullPath
 	Wave/T AT_WaveListTable_FullPath = root:Packages:analysisTools:AT_WaveListTable_FullPath
+	Make/O/T root:Packages:analysisTools:DataSets:ogAT_WaveListTable_UnGroup
 	
 	Make/O/N=1 root:Packages:analysisTools:AT_selWave
 	Wave AT_selWave = root:Packages:analysisTools:AT_selWave

@@ -1234,8 +1234,8 @@ Function/S MakeNewTable(type,tablename,hookFunction,numLines[,left,top,right,bot
 	// Clean folder
 	fldrwaveList=DataFolderDir(2)
 	fldrwaveList = StringByKey("WAVES",fldrwaveList,":",";")
-	for(j=0;j<itemsinlist(fldrwaveList);j+=1)
-		Killwaves/Z $StringFromList(j,fldrwaveList)
+	for(j=0;j<itemsinlist(fldrwaveList,",");j+=1)
+		Killwaves/Z $StringFromList(j,fldrwaveList,",")
 	endfor
 	
 	// Make unique waves or over write existins ones
