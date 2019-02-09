@@ -46,6 +46,64 @@ Function RunCmd(cmdStr)
 	Execute cmdStr
 End
 
+//Opens the file browser to select an abf2 file to browse through
+//For PClamp Browser
+Function browsePClamp()
+	String/G root:ABFvar:ABF_folderpath
+	String/G root:ABFvar:ABF_filename
+	SVAR ABF_folderpath = root:ABFvar:ABF_folderpath
+	SVAR ABF_filename = root:ABFvar:ABF_filename
+	
+	Variable refnum
+	String message = "Select the data folder to index"
+	String fileFilters = "All Files:.*;"
+	Open/D/R/F=fileFilters/M=message refnum
+	ABF_folderpath = ParseFilePath(1,S_fileName,":",1,1)
+	ABF_filename = ParseFilePath(0,S_fileName,":",1,1)
+	Close/A
+	
+	//index the files
+	String fullPath = ABF_folderpath + ABF_filename
+	NewPath/O/Q/Z ABFpath,fullpath
+	String fileList = IndexedFile(ABFpath,-1,".abf")
+	fileList = SortList(fileList,";",16)
+	IndexABF(ABF_filename,fullpath,fileList,fromAT=1)
+	
+	//Hide the indexed table and show it within the GUI
+	String tableName = "DTable_Browse"
+	DoWindow/HIDE=1 $tableName
+	
+	//Change the table
+	
+	//Display the table for browsing
+	//Edit/HOST=analysis_tools/W=(10,75,300,300)/N=abfTable
+	
+	//Set the lines to load everything
+	String/G root:ABFvar:ABF_lines
+	SVAR ABF_lines = root:ABFvar:ABF_lines
+	ABF_lines = ""
+	
+	LoadABF(fromAT=1)
+	
+	//listwave
+	Make/O/T root:Packages:analysisTools:ABF_FileListWave
+	Wave/T ABF_FileListWave = root:Packages:analysisTools:ABF_FileListWave
+	
+	//selwave
+	Make/O root:Packages:analysisTools:ABF_FileSelWave
+	Wave/T ABF_FileSelWave = root:Packages:analysisTools:ABF_FileSelWave
+	
+	//Get the file list
+	Wave/T table = listToTable(fileList,";")
+	Redimension/N=(DimSize(table,0)) ABF_FileListWave,ABF_FileSelWave
+	ABF_FileListWave = table
+	
+	//Make the listboxes
+	ListBox fileListBox win=analysis_tools,pos={10,75},size={150,300},mode=4,listWave=ABF_FileListWave,selWave=ABF_FileSelWave,proc=atListBoxProc
+	ListBox sweepListBox win=analysis_tools,pos={180,75},size={150,300},mode=4,listWave=ABF_FileListWave,selWave=ABF_FileSelWave,proc=atListBoxProc
+End
+
+
 Function SetExtFuncMenus(selection)
 	String selection
 	ControlInfo/W=analysis_tools AT_CommandPop
@@ -1433,6 +1491,19 @@ Function/S tableToList(table,separator)
 		list += table[i] + separator
 	EndFor
 	return list
+End
+
+//Takes table, creates string list with its contents
+Function/WAVE listToTable(list,separator)
+	String list,separator
+	Make/T/FREE/N=(ItemsInList(list,separator)) table
+	
+	Variable i
+
+	For(i=0;i<ItemsInList(list,separator);i+=1)
+		table[i] = StringFromList(i,list,separator)
+	EndFor
+	return table
 End
 
 Function/S ResolveErrorCode(cmdStr)

@@ -171,7 +171,7 @@ Function LoadAnalysisSuite([left,top])
 	//packageTable[1][1] = "-------------------;Average;Error"
 	
 	
-	cmdList = "Data Sets;External Function;---------------;Load PClamp;Load Stimulus Data;---------------;Run Cmd Line;Average;Error;Kill Waves;Duplicate/Rename;----Packages----;Calcium Imaging"
+	cmdList = "Data Sets;External Function;---------------;Load PClamp;Browse PClamp;Load Stimulus Data;---------------;Run Cmd Line;Average;Error;Kill Waves;Duplicate/Rename;----Packages----;Calcium Imaging"
 
 	SVAR currentCmd = root:Packages:analysisTools:currentCmd
 	currentCmd = StringFromList(0,cmdList,";")
@@ -465,7 +465,7 @@ Function LoadAnalysisSuite([left,top])
 	SetVariable roiThreshold win=analysis_tools,pos={145,158},size={40,20},title="",limits={0,inf,0.05},value=_NUM:1,disable=1
 	
 	//For External Functions
-	PopUpMenu extFuncPopUp win=analysis_tools,pos={21,67},size={150,20},title="Functions:",fSize=12,disable=1,value=#"root:Packages:analysisTools:extFuncList",proc=atPopProc
+	PopUpMenu extFuncPopUp win=analysis_tools,pos={21,67},size={150,200},title="Functions:",fSize=12,disable=1,value=#"root:Packages:analysisTools:extFuncList",proc=atPopProc
 	
 	String/G root:Packages:analysisTools:DSNames
 	SVAR DSNames = root:Packages:analysisTools:DSNames
@@ -700,6 +700,7 @@ Function CreateControlLists(cmdList)
 	ctrlList_dataSets = "waveMatch;waveNotMatch;relativeFolderMatch;matchListBox;dataSetListBox;addDataSet;dataSetName;delDataSet;"
 	ctrlList_dataSets += "waveGrouping;addDataSetFromSelection;matchStraddOR;notMatchStraddOR;"
 	ctrlList_dataSets += "prefixGroup;GroupGroup;SeriesGroup;SweepGroup;TraceGroup"
+	
 	//Get Peak Times
 	String/G root:Packages:analysisTools:ctrlList_getPeakTimes
 	SVAR ctrlList_getPeakTimes = root:Packages:analysisTools:ctrlList_getPeakTimes
@@ -730,6 +731,11 @@ Function CreateControlLists(cmdList)
 	String/G root:Packages:analysisTools:ctrlList_loadPClamp
 	SVAR ctrlList_loadPClamp = root:Packages:analysisTools:ctrlList_loadPClamp
 	ctrlList_loadPClamp = "OpenABF2Loader"
+	
+	//Browse PClamp
+	String/G root:Packages:analysisTools:ctrlList_browsePClamp
+	SVAR ctrlList_browsePClamp = root:Packages:analysisTools:ctrlList_browsePClamp
+	ctrlList_browsePClamp = ""
 	
 	//Load Stimulus Data
 	String/G root:Packages:analysisTools:ctrlList_LoadStimulusData
@@ -838,6 +844,9 @@ Function ChangeControls(currentCmd,prevCmd)
 			break
 		case "Load PClamp":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_loadPClamp
+			break
+		case "Browse PClamp":
+			SVAR ctrlList = root:Packages:analysisTools:ctrlList_browsePClamp
 			break
 		case "Load Stimulus Data":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_LoadStimulusData
@@ -969,6 +978,10 @@ Function ChangeControls(currentCmd,prevCmd)
 		case "Load PClamp":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_loadPClamp
 			runCmdStr = ""
+			break
+		case "Browse PClamp":
+			SVAR ctrlList = root:Packages:analysisTools:ctrlList_browsePClamp
+			runCmdStr = "browsePClamp()"
 			break
 		case "Load Stimulus Data":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_LoadStimulusData

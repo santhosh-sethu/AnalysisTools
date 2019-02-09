@@ -838,7 +838,13 @@ Structure DTableValues
 	String filepath
 EndStructure
 
-Function LoadABF()
+Function LoadABF([fromAT])
+	Variable fromAT
+	
+	If(ParamIsDefault(fromAT))
+		fromAT = 0
+	EndIf
+	
 	Variable doLoad = 1
 	//doLoad = 1 to actually load the data
 	//doLoad = 0 to index the data and print a dTable
@@ -874,14 +880,19 @@ Function LoadABF()
 		String errorStr = ""
 	
 		//Set folder to new HekaFile according to filepath
-		String hekaFile = "root:HekaFile:" + ParseFilePath(0,folderPath,":",1,0)
-		If(!DataFolderExists("root:HekaFile"))
-			NewDataFolder root:HekaFile
+		If(fromAT)
+			String hekaFile = "root:Packages:analysisTools:ABF_Browser"
+		Else
+			hekaFile = "root:HekaFile:" + ParseFilePath(0,folderPath,":",1,0)
+			If(!DataFolderExists("root:HekaFile"))
+				NewDataFolder root:HekaFile
+			EndIf
 		EndIf
 		
 		If(!DataFolderExists(hekaFile))
 			NewDataFolder $hekaFile
 		EndIf
+		
 		SetDataFolder $hekaFile
 		
 		errorStr = ABF_LoadWaves(folderPath,filebase,index,whichChannel,doLoad)
@@ -1282,10 +1293,15 @@ Function ABF_WinExists(theWindowName)//,theWindowType)
 End
 
 //Indexes the file without loading data, and prints out a dTable of the contents
-Function/S IndexABF(ABF_filename,fullpath,fileList)
+Function/S IndexABF(ABF_filename,fullpath,fileList,[fromAT])
 	String ABF_filename,fullpath,fileList
+	Variable fromAT
 	Variable i,j,doLoad
 	String info,item
+	
+	If(ParamIsDefault(fromAT))
+		fromAT = 0
+	EndIf
 	
 	doLoad = 0
 	For(i=0;i<ItemsInList(fileList,";");i+=1)
@@ -1293,16 +1309,22 @@ Function/S IndexABF(ABF_filename,fullpath,fileList)
 		String filepath = fullpath + ":" + theFile
 		ABFLoader(filepath,"1",doLoad)
 	
+	
 		If(WaveExists(root:ABFvar:dTable_Values))
 			Wave/T dTable_Values = root:ABFvar:dTable_Values
-			String tableName = "DTable_" + ABF_filename
+			
+			If(!fromAT)
+				String tableName = "DTable_" + ABF_filename
+			Else
+				tableName = "DTable_Browse"
+			EndIf
 			
 			//Create dTable
 			DoWindow $tableName
 			If(!V_flag)
 				MakeNewTable(1,tableName,"",1)
 			EndIf
-			
+				
 			//Fill out dTable
 			For(j=0;j<8;j+=1)
 				info = TableInfo(tableName,j)
@@ -1324,6 +1346,8 @@ Function/S IndexABF(ABF_filename,fullpath,fileList)
 			DoAlert 0,"Couldn't get dTable Values for: " + filepath
 			break
 		EndIf
+
+	
 	EndFor
 
 End
