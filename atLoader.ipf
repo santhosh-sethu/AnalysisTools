@@ -48,6 +48,11 @@ Function InsertIncludes(fileList)
 	Execute/P "COMPILEPROCEDURES ";
 End
 
+Function SetDefaults()
+	SetVariable scriptFolder win=analysis_tools,value=_STR:"~/Desktop/retina-decoder-master"
+	SetVariable denoiseDataFolder win=analysis_tools,value=_STR:"bmb:Users:bmb:Documents:Denoise_Data"
+End
+
 Function LoadAnalysisSuite([left,top])
 	//So the window stays in position upon reload
 	Variable left,top
@@ -521,8 +526,10 @@ Function LoadAnalysisSuite([left,top])
 	SetVariable cmdLineStr win=analysis_tools,size={300,20},pos={21,65},fsize=12,title="Cmd:",value=_STR:"",disable=1
 	
 	//For Denoise
-	Checkbox overwriteCheck win=analysis_tools,size={60,20},pos={20,39},title="Overwrite",disable=1
-	SetVariable outputFolder win=analysis_tools,size={150,20},pos={90,40},title="Output Folder",value=_STR:"",disable=1
+	Checkbox overwriteCheck win=analysis_tools,size={60,20},pos={20,29},title="Overwrite",disable=1
+	SetVariable outputFolder win=analysis_tools,size={150,20},pos={90,30},title="Output Folder",value=_STR:"",disable=1
+	SetVariable scriptFolder win=analysis_tools,size={300,20},pos={20,50},title="Python Script Folder",value=_STR:"",disable=1
+	SetVariable denoiseDataFolder win=analysis_tools,size={300,20},pos={20,70},title="Denoise Data Folder",value=_STR:"",disable=1
 	
 	//For MultiROI
 	CheckBox doDarkSubtract win=analysis_tools,pos={10,250},size={150,20},title="Dark Subtraction",disable=1
@@ -593,6 +600,9 @@ Function LoadAnalysisSuite([left,top])
 	
 	DoWindow/F analysis_tools
 	cdf = GetDataFolder(1)
+	
+	//any default settings for system personalization can be changed here
+	SetDefaults()
 End
 
 //Assigns control variables to functions from the 'Command' pop up menu
@@ -765,7 +775,7 @@ Function CreateControlLists(cmdList)
 	//Denoise
 	String/G root:Packages:analysisTools:ctrlList_denoise
 	SVAR ctrlList_denoise = root:Packages:analysisTools:ctrlList_denoise
-	ctrlList_denoise = "extFuncDS;extFuncChannelPop;extFuncDSListBox;overwriteCheck;outputFolder"
+	ctrlList_denoise = "extFuncDS;extFuncChannelPop;extFuncDSListBox;overwriteCheck;outputFolder;scriptFolder;denoiseDataFolder"
 	
 	//For External Functions
 	String/G root:Packages:analysisTools:ctrlList_extFunc

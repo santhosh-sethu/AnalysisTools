@@ -328,6 +328,7 @@ Function atButtonProc(ba) : ButtonControl
 					break
 				case "atViewerClearTracesButton":
 					clearTraces()
+					break
 				case "matchStraddOR":
 					ControlInfo/W=analysis_tools waveMatch
 					SetVariable waveMatch win=analysis_tools,value=_STR:S_Value + "||"

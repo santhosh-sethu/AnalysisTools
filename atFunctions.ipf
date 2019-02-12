@@ -5394,6 +5394,14 @@ Function/S exportWaves()
 	ControlInfo/W=analysis_tools outputFolder
 	String outFolder = S_Value	
 	
+	//Path to python script
+	ControlInfo/W=analysis_tools scriptFolder
+	String scriptFolder = S_Value
+	
+	//Path to data folder that will hold the exported and denoised data
+	ControlInfo/W=analysis_tools denoiseDataFolder
+	String denoiseDataFolder = S_Value
+	
 	String fileName,errStr = ""
 	Variable size,i
 	
@@ -5433,7 +5441,7 @@ Function/S exportWaves()
 	Edit/N=denoiseData data as "denoiseData"
 	
 	//Path to folder
-	NewPath/O/Q folderPath,"bmb:Users:bmb:Documents:Denoise_Data"
+	NewPath/O/Q folderPath,denoiseDataFolder
 	
 	//Filename
 	fileName = "denoiseData.csv"
@@ -5445,17 +5453,53 @@ Function/S exportWaves()
 	KillWindow/Z denoiseData
 	KillWaves/Z data
 	
-	DoAlert/T="Denoising" 1,"Run Python Script"
+	String os = IgorInfo(2)
 	
-	If(V_flag == 1)
-		importWaves(list,outFolder,overwrite)
-	EndIf
+	strswitch(os)
+		case "Windows":
+			//must manually execute python code through anaconda terminal
+			DoAlert/T="Denoising" 1,"Run Python Script"
+			If(V_flag == 1)
+				print errStr
+			Else
+				importWaves(list,outFolder,overwrite)
+			EndIf
+			break
+		case "Macintosh":
+			//Uses applescript to run the python code through anaconda terminal
+			String script = "activate application \"Terminal\"\r"
+			script += "tell application \"System Events\" to keystroke \"conda activate base\"\r"
+			script += "tell application \"System Events\" to keystroke return\r"
+			script += "delay 0.1\r"
+			script += "tell application \"System Events\" to keystroke \"cd " + scriptFolder + "\"\r"
+			script += "tell application \"System Events\" to keystroke return\r"
+			script += "delay 0.1\r"
+			script += "tell application \"System Events\" to keystroke \"python denoise.py\"\r"
+			script += "tell application \"System Events\" to keystroke return"
+	
+			ExecuteScriptText script
+			
+			//Wait 4 second for the applescript to run in background
+			Sleep/S 4
+			
+			errStr = S_Value
+			
+			If(strlen(errStr))
+				print errStr
+			Else
+			   errStr = importWaves(list,outFolder,overwrite)
+				print errStr
+			EndIf
+		break
+	endswitch
+
 End
 
 Function/S importWaves(list,outFolder,overwrite)
 	String list,outFolder
 	Variable overwrite
 	Variable i,offset,delta
+	String errStr = ""
 	
 	//Path to folder
 	NewPath/O/Q folderPath,"bmb:Users:bmb:Documents:Denoise_Data"
@@ -5464,7 +5508,7 @@ Function/S importWaves(list,outFolder,overwrite)
 	DFREF saveDF = GetDataFolderDFR()
 	
 	//Load waves
-	LoadWave/P=folderPath/J/A "bmb:Users:bmb:Documents:Denoise_Data:denoiseData.csv"   
+	LoadWave/Q/P=folderPath/J/A "bmb:Users:bmb:Documents:Denoise_Data:denoiseData.csv"   
 	
 	For(i=0;i<ItemsInList(list,";");i+=1)
 		//Original wave and folder
@@ -5473,8 +5517,7 @@ Function/S importWaves(list,outFolder,overwrite)
 		
 		//Error handling
 		If(!WaveExists(oldWave))
-			String errStr = "Couldn't find the wave: " + NameOfWave(oldWave)
-			print errStr
+			errStr = "Couldn't find the wave: " + NameOfWave(oldWave)
 			return errStr
 		EndIf
 		
@@ -5489,7 +5532,6 @@ Function/S importWaves(list,outFolder,overwrite)
 		//Error handling
 		If(!WaveExists(newWave))
 			errStr = "Couldn't find the wave: " + NameOfWave(newWave)
-			print errStr
 			return errStr
 		EndIf
 		
@@ -5520,7 +5562,7 @@ Function/S importWaves(list,outFolder,overwrite)
 		SetScale/P x,offset,delta,outWave
 		Note outWave,"Denoised"
 		KillWaves/Z newWave
-
 	EndFor
-
+	
+	return errStr
 End
