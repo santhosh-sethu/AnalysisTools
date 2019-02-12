@@ -163,7 +163,7 @@ Function LoadAnalysisSuite([left,top])
 	Make/O/T/N=(2,2) root:Packages:analysisTools:packageTable
 	Wave/T packageTable = root:Packages:analysisTools:packageTable
 	packageTable[0][0] = "Calcium Imaging"
-	packageTable[0][1] = "-------ROIs--------;MultiROI;ROI Grid;Filter ROI;Display ROIs;Kill ROI;-------Maps-------;"
+	packageTable[0][1] = "-------ROIs--------;MultiROI;ROI Grid;Filter ROI;Display ROIs;Kill ROI;Denoise;-------Maps-------;"
 	packageTable[0][1] += "df Map;Vector Sum Map;------Masks-------;Get Dendritic Mask;Mask Scan Data;"
 	packageTable[0][1] += "----Registration---;Adjust Galvo Distortion;Register Image;Rescale Scans"
 	
@@ -386,6 +386,44 @@ Function LoadAnalysisSuite([left,top])
 	//Load PClamp
 	Button OpenABF2Loader win=analysis_tools,pos={71,66},size={150,20},title="Open PClamp Loader",disable=1,proc=atButtonProc
 	
+	//Browse PClamp
+	String/G root:Packages:analysisTools:alreadyLoaded
+	SVAR alreadyLoaded = root:Packages:analysisTools:alreadyLoaded
+	alreadyLoaded = ""
+	
+	//Make folder to hold the browser waves
+	String browserPath = "root:Packages:analysisTools:ABF_Browser"
+	If(!DataFolderExists(browserPath))
+		NewDataFolder $browserPath
+	EndIf
+	
+	//If there are waves in the browser folder, populate the pclamp browser list box
+	SetDataFolder $browserPath
+	String browseWaves = DataFolderDir(2,browserPath)
+	browseWaves = StringByKey("WAVES",browseWaves,":",";")
+	
+	//ABF Browser file listwave
+	Make/O/T root:Packages:analysisTools:ABF_FileListWave
+	Wave/T ABF_FileListWave = root:Packages:analysisTools:ABF_FileListWave
+	//ABF Browser file selwave
+	Make/O root:Packages:analysisTools:ABF_FileSelWave
+	Wave ABF_FileSelWave = root:Packages:analysisTools:ABF_FileSelWave
+	
+	//ABF Browser file listwave
+	Make/O/T root:Packages:analysisTools:ABF_SweepListWave
+	Wave/T ABF_SweepListWave = root:Packages:analysisTools:ABF_SweepListWave
+	//ABF Browser file selwave
+	Make/O root:Packages:analysisTools:ABF_SweepSelWave
+	Wave ABF_SweepSelWave = root:Packages:analysisTools:ABF_SweepSelWave
+	
+	Redimension/N=(ItemsInList(browseWaves,",")) ABF_SweepListWave,ABF_SweepSelWave
+	Wave/T table = listToTable(browseWaves,",")
+	ABF_SweepListWave = table
+	
+	ListBox fileListBox win=analysis_tools,pos={10,75},size={150,300},mode=4,listWave=ABF_FileListWave,selWave=ABF_FileSelWave,disable=1,proc=atListBoxProc
+	ListBox sweepListBox win=analysis_tools,pos={180,75},size={150,300},mode=4,listWave=ABF_SweepListWave,selWave=ABF_SweepSelWave,disable=1,proc=atListBoxProc
+	
+	
 	//For ROI From Map
 	CheckBox avgResultsCheck win=analysis_tools,pos={10,81},size={50,20},title="Avg Results",disable=1
 	
@@ -482,6 +520,9 @@ Function LoadAnalysisSuite([left,top])
 	//For Run Cmd Line
 	SetVariable cmdLineStr win=analysis_tools,size={300,20},pos={21,65},fsize=12,title="Cmd:",value=_STR:"",disable=1
 	
+	//For Denoise
+	Checkbox overwriteCheck win=analysis_tools,size={60,20},pos={20,39},title="Overwrite",disable=1
+	SetVariable outputFolder win=analysis_tools,size={150,20},pos={90,40},title="Output Folder",value=_STR:"",disable=1
 	
 	//For MultiROI
 	CheckBox doDarkSubtract win=analysis_tools,pos={10,250},size={150,20},title="Dark Subtraction",disable=1
@@ -721,6 +762,10 @@ Function CreateControlLists(cmdList)
 	SVAR ctrlList_killROI = root:Packages:analysisTools:ctrlList_killROI
 	ctrlList_killROI = ""
 	
+	//Denoise
+	String/G root:Packages:analysisTools:ctrlList_denoise
+	SVAR ctrlList_denoise = root:Packages:analysisTools:ctrlList_denoise
+	ctrlList_denoise = "extFuncDS;extFuncChannelPop;extFuncDSListBox;overwriteCheck;outputFolder"
 	
 	//For External Functions
 	String/G root:Packages:analysisTools:ctrlList_extFunc
@@ -735,7 +780,7 @@ Function CreateControlLists(cmdList)
 	//Browse PClamp
 	String/G root:Packages:analysisTools:ctrlList_browsePClamp
 	SVAR ctrlList_browsePClamp = root:Packages:analysisTools:ctrlList_browsePClamp
-	ctrlList_browsePClamp = ""
+	ctrlList_browsePClamp = "fileListBox;sweepListBox"
 	
 	//Load Stimulus Data
 	String/G root:Packages:analysisTools:ctrlList_LoadStimulusData
@@ -841,6 +886,9 @@ Function ChangeControls(currentCmd,prevCmd)
 			break
 		case "Kill ROI":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_killROI
+			break
+		case "Denoise":
+			SVAR ctrlList = root:Packages:analysisTools:ctrlList_denoise
 			break
 		case "Load PClamp":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_loadPClamp
@@ -974,6 +1022,10 @@ Function ChangeControls(currentCmd,prevCmd)
 		case "Kill ROI":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_killROI
 			runCmdStr = "deleteROI()"
+			break
+		case "Denoise":
+			SVAR ctrlList = root:Packages:analysisTools:ctrlList_denoise
+			runCmdStr = "exportWaves()"
 			break
 		case "Load PClamp":
 			SVAR ctrlList = root:Packages:analysisTools:ctrlList_loadPClamp
@@ -1159,6 +1211,7 @@ Function ChangeControls(currentCmd,prevCmd)
 			DrawText/W=analysis_tools 255,117,"Data Sets:"
 			SetDrawLayer/W=analysis_tools ProgBack
 			break
+		case "Denoise":
 		case "Duplicate/Rename":
 		case "Average":
 		case "Error":

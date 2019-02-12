@@ -93,6 +93,8 @@ Function atButtonProc(ba) : ButtonControl
 							EndFor
 
 							break
+						case "Denoise":
+							Variable denoise = 1
 						case "External Function":
 						case "Duplicate/Rename":
 						case "Average":
@@ -113,6 +115,11 @@ Function atButtonProc(ba) : ButtonControl
 							ControlInfo/W=analysis_tools extFuncDS
 							numWaveSets = GetNumWaveSets(S_Value)
 							wsDims = GetWaveSetDims(S_Value)
+							
+							//If denoise function, only use one waveset
+							If(denoise)
+								numWaveSets = 1
+							EndIf
 							
 							//Run the command for the designated number of wavesets
 							Variable ref = StartMSTimer
@@ -715,6 +722,11 @@ Function atListBoxProc(lba) : ListBoxControl
 					//Set to null if a selection has changed.
 					viewerRecall = ""
 					break
+				case "fileListBox":
+					//PClamp Browser file selection
+					//Loads the sweeps into memory and displays their names it the sweep list box
+					LoadABF(fromAT=1)
+					break
 			endswitch
 		case 6: // begin edit
 			break
@@ -836,6 +848,7 @@ Function atPopProc(pa) : PopupMenuControl
 						EndIf
 					Else
 						strswitch(pa.popStr)
+							case "Denoise":
 							case "Average":
 							case "Error":
 							case "Kill Waves":

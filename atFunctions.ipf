@@ -5378,3 +5378,149 @@ Function duplicateRename()
 	EndFor
 
 End
+
+//Export single dimension waves into CSV format
+Function/S exportWaves()
+	
+	//Finds the wave paths for analysis
+	String list = getWaveNames(ignoreWaveGrouping=1)
+	Variable numWaves = ItemsInList(list,";")
+	
+	//Overwrite?
+	ControlInfo/W=analysis_tools overwriteCheck
+	Variable overwrite = V_Value
+	
+	//Output subfolder?
+	ControlInfo/W=analysis_tools outputFolder
+	String outFolder = S_Value	
+	
+	String fileName,errStr = ""
+	Variable size,i
+	
+	String separator = ";"
+	
+	//How many waves are being exported?
+	numWaves = ItemsInList(list,separator)
+	
+	Wave theWave = $StringFromList(0,list,separator)
+	If(!WaveExists(theWave))
+		errStr = "Couldn't find the wave: " + NameOfWave(theWave)
+		return errStr
+	EndIf
+	
+	//How many points does the wave have?
+	size = DimSize(theWave,0)
+	
+	//Make the output table for making the csv
+	Make/O/N=(size,numWaves) root:data
+	Wave data = root:data
+	
+	//Fill out the table. Each column is a different wave
+	For(i=0;i<numWaves;i+=1)
+		Wave theWave = $StringFromList(i,list,separator)
+		
+		//Error handling
+		If(!WaveExists(theWave))
+			errStr = "Couldn't find the wave: " + NameOfWave(theWave)
+			print errStr
+			return errStr
+		EndIf
+		
+		data[][i] = theWave[p][0]
+	EndFor
+	
+	//Show the table
+	Edit/N=denoiseData data as "denoiseData"
+	
+	//Path to folder
+	NewPath/O/Q folderPath,"bmb:Users:bmb:Documents:Denoise_Data"
+	
+	//Filename
+	fileName = "denoiseData.csv"
+	
+	//Export table to CSV
+	SaveTableCopy/O/P=folderPath/T=2/W=denoiseData as fileName
+	
+	//Cleanup
+	KillWindow/Z denoiseData
+	KillWaves/Z data
+	
+	DoAlert/T="Denoising" 1,"Run Python Script"
+	
+	If(V_flag == 1)
+		importWaves(list,outFolder,overwrite)
+	EndIf
+End
+
+Function/S importWaves(list,outFolder,overwrite)
+	String list,outFolder
+	Variable overwrite
+	Variable i,offset,delta
+	
+	//Path to folder
+	NewPath/O/Q folderPath,"bmb:Users:bmb:Documents:Denoise_Data"
+	
+	//Set Data Folder to that of the first wave
+	DFREF saveDF = GetDataFolderDFR()
+	
+	//Load waves
+	LoadWave/P=folderPath/J/A "bmb:Users:bmb:Documents:Denoise_Data:denoiseData.csv"   
+	
+	For(i=0;i<ItemsInList(list,";");i+=1)
+		//Original wave and folder
+		Wave oldWave = $StringFromList(i,list,";")
+		String df = GetWavesDataFolder(oldWave,1)
+		
+		//Error handling
+		If(!WaveExists(oldWave))
+			String errStr = "Couldn't find the wave: " + NameOfWave(oldWave)
+			print errStr
+			return errStr
+		EndIf
+		
+		//Scaling details
+		offset = DimOffset(oldWave,0)
+		delta = DimDelta(oldWave,0)
+		
+		//Denoised wave that was loaded
+		SetDataFolder saveDF
+		Wave newWave = $("wave" + num2str(i))
+		
+		//Error handling
+		If(!WaveExists(newWave))
+			errStr = "Couldn't find the wave: " + NameOfWave(newWave)
+			print errStr
+			return errStr
+		EndIf
+		
+		//Make output data folder if there is one indicated and it doesn't exist
+		If(!strlen(outFolder))
+			SetDataFolder $df
+		Else
+			If(!DataFolderExists(df + outFolder))
+				NewDataFolder $(df + outFolder)
+			EndIf
+			SetDataFolder $(df + outFolder)
+		EndIf
+		
+		//Rename/overwrite
+		String newName = StringFromList(i,list,";")
+		
+		If(overwrite)
+			Duplicate/O newWave,$NameOfWave(oldWave)
+			Wave outWave = $NameOfWave(oldWave)
+			DeletePoints 0,1,outWave
+		Else
+			Duplicate/O newWave,$(NameOfWave(oldWave) + "_denoise")
+			Wave outWave = $(NameOfWave(oldWave) + "_denoise")
+			DeletePoints 0,1,outWave
+		EndIf
+		
+		//Scales,wave notes,cleanup
+		SetScale/P x,offset,delta,outWave
+		Note outWave,"Denoised"
+		KillWaves/Z newWave
+
+	EndFor
+
+End

@@ -477,8 +477,9 @@ Function/S whichDataSet()
 End
 
 //Returns the wave reference for the selected or named data set
-Function/WAVE getDataSetWave([dsName])
+Function/WAVE getDataSetWave([dsName,original])
 	String dsName
+	Variable original//if you want the ungrouped version of the data set
 	Wave/T dataSetNames = root:Packages:analysisTools:DataSets:dataSetNames
 	
 	If(ParamIsDefault(dsName))
@@ -491,14 +492,23 @@ Function/WAVE getDataSetWave([dsName])
 		If(V_Value == -1)
 			Wave/T theWave = root:Packages:analysisTools:AT_waveListTable_FullPath
 		Else
-			dsName = "root:Packages:analysisTools:DataSets:DS_" + dataSetNames[V_Value]
+			If(original)
+				dsName = "root:Packages:analysisTools:DataSets:ogDS_" + dataSetNames[V_Value]
+			Else
+				dsName = "root:Packages:analysisTools:DataSets:DS_" + dataSetNames[V_Value]
+			EndIf
 			If(WaveExists($dsName))
 				Wave/T theWave = $dsName
 			EndIf
 		EndIf
 		return theWave
 	Else
-		dsName = "root:Packages:analysisTools:DataSets:DS_" + dsName
+		If(original)
+			dsName = "root:Packages:analysisTools:DataSets:ogDS_" + dsName
+		Else
+			dsName = "root:Packages:analysisTools:DataSets:DS_" + dsName
+		EndIf
+		
 		If(WaveExists($dsName))
 			Wave/T theWave = $dsName
 			return theWave

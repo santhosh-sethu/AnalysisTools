@@ -840,48 +840,105 @@ EndStructure
 
 Function LoadABF([fromAT])
 	Variable fromAT
+	SVAR alreadyLoaded = root:Packages:analysisTools:alreadyLoaded
 	
 	If(ParamIsDefault(fromAT))
 		fromAT = 0
 	EndIf
 	
 	Variable doLoad = 1
+
 	//doLoad = 1 to actually load the data
 	//doLoad = 0 to index the data and print a dTable
 	
 	SVAR ABF_filename = root:ABFvar:ABF_filename
 
-	String dtableName = "DTable_" + ABF_filename
+	If(fromAT)
+		String dtableName = "DTable_Browse"
+	Else
+		dtableName = "DTable_" + ABF_filename
+	EndIf
+	
 	String info = TableInfo(dtableName,-2)
-	Variable numRows = str2num(StringByKey("ROWS",info,":",";"))
+	Variable i,numRows = str2num(StringByKey("ROWS",info,":",";"))
 	
 	SVAR ABF_lines = root:ABFvar:ABF_lines
 	//Load everything if it isn't specified
-	If(!strlen(ABF_lines))
-		ABF_lines = "0-" + num2str(numRows-1)
+	
+	If(!fromAT)
+		If(!strlen(ABF_lines))
+			ABF_lines = "0-" + num2str(numRows-1)
+		EndIf
+	Else
+		//get line numbers from fileListBox selection in AT
+		ABF_lines = ""
+		Wave ABF_FileSelWave = root:Packages:analysisTools:ABF_FileSelWave
+		For(i=0;i<DimSize(ABF_FileSelWave,0);i+=1)
+			If(ABF_FileSelWave[i])
+				ABF_lines += num2str(i) + ";"
+			EndIf
+		EndFor
+		
 	EndIf
+	
 	String lines = resolveListItems(ABF_lines,";")
 	
 	Variable numLines = ItemsInList(lines,";")
-	Variable i,dti
+	Variable dti
 
 	//Loop through each line on the dtable
 	For(i=0;i<numLines;i+=1)
+		Variable doSkip = 0	//doesn't reload if the waves are already there
+		
 		dti = str2num(StringFromList(i,lines,";"))
 	
 		If(dti > numRows - 1) 
 			Abort "The row: " + num2str(dti) + " does not exist" 
 		EndIf
 		
-		String folderPath = GetFolderPath(dti)
+		String folderPath = GetFolderPath(dti,fromAT=fromAT)
+		If(!strlen(folderPath))
+			break
+		EndIf
 		String filebase = GetFileBase(folderPath)
-		String index = GetIndex(dti)
-		String whichChannel = GetChannelStr(dti)
+		String index = GetIndex(dti,fromAT=fromAT)
+		String whichChannel = GetChannelStr(dti,fromAT=fromAT)
 		String errorStr = ""
 	
-		//Set folder to new HekaFile according to filepath
+		//Set folder to new HekaFile according to filepath	
 		If(fromAT)
+			Variable j = 0
+			String objName
 			String hekaFile = "root:Packages:analysisTools:ABF_Browser"
+			//check if the file already has been loaded, if so skip.
+			SetDataFolder root:Packages:analysisTools:ABF_Browser
+			Do
+				objName = GetIndexedObjName("root:Packages:analysisTools:ABF_Browser:",1,j)
+				If (strlen(objName) == 0)
+					break
+				EndIf
+				
+				String theNote = note($objName)
+				
+				If(str2num(index) < 10)
+					String indexStr = "000" + index
+				ElseIf(str2num(index) > 9 && str2num(index) < 100)
+					indexStr = "00" + index
+				ElseIf(str2num(index) > 99)
+					indexStr = "0" + index
+				Else
+					indexStr = index
+				EndIf
+				
+				String fullWavePath = folderPath + ":" + filebase + "_" + indexStr + ".abf"
+				
+				If(stringmatch(theNote,fullWavePath))
+					//skip loading this one
+					doSkip = 1
+					break
+				EndIf
+				j+=1
+			While(1)
 		Else
 			hekaFile = "root:HekaFile:" + ParseFilePath(0,folderPath,":",1,0)
 			If(!DataFolderExists("root:HekaFile"))
@@ -895,23 +952,38 @@ Function LoadABF([fromAT])
 		
 		SetDataFolder $hekaFile
 		
-		errorStr = ABF_LoadWaves(folderPath,filebase,index,whichChannel,doLoad)
-		If(strlen(errorStr))
-			DoAlert 0,"Some waves were unable to be loaded."
-			print errorStr
+		If(!doSkip)
+			errorStr = ABF_LoadWaves(folderPath,filebase,index,whichChannel,doLoad)
+		
+			If(strlen(errorStr))
+				DoAlert 0,"Some waves were unable to be loaded."
+				print errorStr
+			EndIf
 		EndIf
 	EndFor
 End
 
-Function/S GetFolderPath(dti)
-	Variable dti
+Function/S GetFolderPath(dti,[fromAT])
+	Variable dti,fromAT
 	SVAR ABF_filename = root:ABFvar:ABF_filename
-	
 	String dtableName
-	dtableName = "DTable_" + ABF_filename
+	
+	If(ParamIsDefault(fromAT))
+		fromAT = 0
+	EndIf
+	
+	If(fromAT)
+		dtableName = "DTable_Browse"
+	Else
+		dtableName = "DTable_" + ABF_filename
+	EndIf
 	
 	//Data Table info
 	String info = TableInfo(dtableName,7)
+	If(!strlen(info))
+		return ""
+	EndIf
+	
 	Wave/T filePathWave = $StringByKey("WAVE",info,":",";")
 	
 	String folderPath = filePathWave[dti]
@@ -925,11 +997,20 @@ Function/S GetFileBase(folderPath)
 	return filebase
 End
 
-Function/S GetIndex(dti)
-	Variable dti
+Function/S GetIndex(dti,[fromAT])
+	Variable dti,fromAT
 	SVAR ABF_filename = root:ABFvar:ABF_filename
 	String dtableName
-	dtableName = "DTable_" + ABF_filename
+	
+	If(ParamIsDefault(fromAT))
+		fromAT = 0
+	EndIf
+	
+	If(fromAT)
+		dtableName = "DTable_Browse"
+	Else
+		dtableName = "DTable_" + ABF_filename
+	EndIf
 	
 	String info = TableInfo(dTableName,2)
 	Wave/T sweepWave = $StringByKey("WAVE",info,":",";")
@@ -938,12 +1019,17 @@ Function/S GetIndex(dti)
 	return index
 End
 
-Function/S GetChannelStr(dti)
-	Variable dti
+Function/S GetChannelStr(dti,[fromAT])
+	Variable dti,fromAT
 	SVAR ABF_filename = root:ABFvar:ABF_filename
 	String dtableName
-	dtableName = "DTable_" + ABF_filename
-
+	
+	If(fromAT)
+		dtableName = "DTable_Browse"
+	Else
+		dtableName = "DTable_" + ABF_filename
+	EndIf
+	
 	String info = TableInfo(dTableName,4)
 	Wave/T traceWave = $StringByKey("WAVE",info,":",";")
 	

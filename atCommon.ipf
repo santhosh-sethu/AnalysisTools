@@ -54,7 +54,7 @@ Function browsePClamp()
 	SVAR ABF_folderpath = root:ABFvar:ABF_folderpath
 	SVAR ABF_filename = root:ABFvar:ABF_filename
 	
-	Variable refnum
+	Variable refnum,i
 	String message = "Select the data folder to index"
 	String fileFilters = "All Files:.*;"
 	Open/D/R/F=fileFilters/M=message refnum
@@ -83,24 +83,31 @@ Function browsePClamp()
 	SVAR ABF_lines = root:ABFvar:ABF_lines
 	ABF_lines = ""
 	
-	LoadABF(fromAT=1)
+	//Kill existing waves in the folder
+	String saveDF = GetDataFolder(1)
+	SetDataFolder root:Packages:analysisTools:ABF_Browser
 	
-	//listwave
-	Make/O/T root:Packages:analysisTools:ABF_FileListWave
-	Wave/T ABF_FileListWave = root:Packages:analysisTools:ABF_FileListWave
+	String browseWaves = DataFolderDir(2)
+	browseWaves = StringByKey("WAVES",browseWaves,":",";")
 	
-	//selwave
-	Make/O root:Packages:analysisTools:ABF_FileSelWave
-	Wave/T ABF_FileSelWave = root:Packages:analysisTools:ABF_FileSelWave
+	For(i=0;i<ItemsInList(browseWaves,",");i+=1)
+		KillWaves/Z $StringFromList(i,browseWaves,",")
+	EndFor
+	SetDataFolder $saveDF
+	
+	//sweep listwave
+	Wave/T ABF_SweepListWave = root:Packages:analysisTools:ABF_SweepListWave
+	
+	//sweep selwave
+	Wave ABF_SweepSelWave = root:Packages:analysisTools:ABF_SweepSelWave
+	//reset the list and selection waves
+	Redimension/N=0 ABF_SweepListWave,ABF_SweepSelWave
 	
 	//Get the file list
 	Wave/T table = listToTable(fileList,";")
-	Redimension/N=(DimSize(table,0)) ABF_FileListWave,ABF_FileSelWave
-	ABF_FileListWave = table
+	Redimension/N=(DimSize(table,0)) ABF_SweepListWave,ABF_SweepSelWave
+	ABF_SweepListWave = table
 	
-	//Make the listboxes
-	ListBox fileListBox win=analysis_tools,pos={10,75},size={150,300},mode=4,listWave=ABF_FileListWave,selWave=ABF_FileSelWave,proc=atListBoxProc
-	ListBox sweepListBox win=analysis_tools,pos={180,75},size={150,300},mode=4,listWave=ABF_FileListWave,selWave=ABF_FileSelWave,proc=atListBoxProc
 End
 
 
@@ -1292,7 +1299,14 @@ Function/S getSelectedItems()
 End
 
 //Routes to using scan list or item list or data sets for wave selection.
-Function/S getWaveNames()
+Function/S getWaveNames([ignoreWaveGrouping])
+	Variable ignoreWaveGrouping
+	
+	//To override wave grouping for some specific functions that can't use them
+	If(ParamIsDefault(ignoreWaveGrouping))
+		ignoreWaveGrouping = 0
+	EndIf
+	
 	SVAR wsDims = root:Packages:analysisTools:DataSets:wsDims
 	NVAR numWaveSets = root:Packages:analysisTools:DataSets:numWaveSets
 	NVAR wsn = root:Packages:analysisTools:DataSets:wsn
@@ -1312,21 +1326,31 @@ Function/S getWaveNames()
 			theWaveList = getSelectedItems()
 			break
 		default:
-			Wave/T ds = GetDataSetWave(dsName=S_Value)
-			Variable pos = tableMatch("*WSN " + num2str(wsn) + "*",ds) + 1//first wave of the waveset
-			If(pos == 0) //no wavesets defined, take all the waves at once
-				Variable endpos = DimSize(ds,0)
+			If(ignoreWaveGrouping)
+				Wave/T ds = GetDataSetWave(dsName=S_Value)
+				theWaveList = tableToList(ds,";")
+				//Remove the wave set divisions
+				String matches = ListMatch(theWaveList,"*WSN*",";")
+				theWaveList = RemoveFromList(matches,theWaveList)
+		
 			Else
-				endpos = pos + str2num(StringFromList(wsn,wsDims,";")) //Last wave of the waveset
+				Wave/T ds = GetDataSetWave(dsName=S_Value)
+				Variable pos = tableMatch("*WSN " + num2str(wsn) + "*",ds) + 1//first wave of the waveset
+				If(pos == 0) //no wavesets defined, take all the waves at once
+					Variable endpos = DimSize(ds,0)
+				Else
+					endpos = pos + str2num(StringFromList(wsn,wsDims,";")) //Last wave of the waveset
+				EndIf
+				
+				If(numtype(endpos) == 2) //only wave of the waveset
+					endpos = pos + 1
+				EndIf
+				
+				For(i=pos;i<endpos;i+=1)
+					theWaveList += ds[i] + ";"
+				EndFor
 			EndIf
 			
-			If(numtype(endpos) == 2) //only wave of the waveset
-				endpos = pos + 1
-			EndIf
-			
-			For(i=pos;i<endpos;i+=1)
-				theWaveList += ds[i] + ";"
-			EndFor
 			break
 	endswitch
 	return theWaveList
@@ -2050,7 +2074,7 @@ Function/WAVE getWaveMatchList()
 	Redimension/N=(ItemsInList(masterItemList,",")) waveListTable,selWave
 	
 	For(i=0;i<ItemsInList(masterItemList,",");i+=1)
-		waveListTable[i] = StringFromList(i,masterItemList,",")
+		waveListTable[i] = StringFromList(i,masterItemList,",")		
 	EndFor
 	
 	return waveListTable
@@ -3179,7 +3203,7 @@ Function ReallyKillWaves(w)
     do
       string column=StringFromList(j,table)
       if(strlen(column))
-        RemoveFromTable /Z/W=$table $column
+        RemoveFromTable/Z/W=$table $column
         j+=1
       else
         break
