@@ -5380,6 +5380,7 @@ Function duplicateRename()
 End
 
 //Export single dimension waves into CSV format
+//Executes a denoising algorithm via Python code
 Function/S exportWaves()
 	
 	//Finds the wave paths for analysis
@@ -5457,13 +5458,24 @@ Function/S exportWaves()
 	
 	strswitch(os)
 		case "Windows":
-			//must manually execute python code through anaconda terminal
-			DoAlert/T="Denoising" 1,"Run Python Script"
-			If(V_flag == 1)
+			//write BAT file for windows python script - denoising code
+			String scriptPath = writeBAT(scriptFolder)
+			
+			If(strlen(errStr))
 				print errStr
 			Else
 				importWaves(list,outFolder,overwrite)
 			EndIf
+			
+			ExecuteScriptText scriptPath
+		
+			//must manually execute python code through anaconda terminal
+			//DoAlert/T="Denoising" 1,"Run Python Script"
+			//If(V_flag == 1)
+			//	print errStr
+		//	Else
+			//	importWaves(list,outFolder,overwrite)
+			//EndIf
 			break
 		case "Macintosh":
 			//Uses applescript to run the python code through anaconda terminal
@@ -5495,20 +5507,21 @@ Function/S exportWaves()
 
 End
 
+//Imports waves that were operated on by Python script for denoising Ca signals
 Function/S importWaves(list,outFolder,overwrite)
 	String list,outFolder
 	Variable overwrite
 	Variable i,offset,delta
 	String errStr = ""
 	
-	//Path to folder
-	NewPath/O/Q folderPath,"bmb:Users:bmb:Documents:Denoise_Data"
-	
+	//Path to folder was created in exportWaves function
+	//path = denoiseDataFolder
+		
 	//Set Data Folder to that of the first wave
 	DFREF saveDF = GetDataFolderDFR()
 	
 	//Load waves
-	LoadWave/Q/P=folderPath/J/A "bmb:Users:bmb:Documents:Denoise_Data:denoiseData.csv"   
+	LoadWave/Q/P=folderPath/J/A "denoiseData.csv"   
 	
 	For(i=0;i<ItemsInList(list,";");i+=1)
 		//Original wave and folder
@@ -5565,4 +5578,35 @@ Function/S importWaves(list,outFolder,overwrite)
 	EndFor
 	
 	return errStr
+End
+
+//Writes a .bat file to disk on Windows systems
+//File contains a python script for executing a denoising algorithm
+Function/S writeBAT(scriptFolder)
+	String scriptFolder
+	String errStr = ""
+	Variable refNum
+	String/G root:Packages:analysisTools:batStr
+	SVAR batStr = root:Packages:analysisTools:batStr
+	
+	String scriptPath = scriptFolder + "\denoiseScript.bat"
+	
+	//contents of the BAT file
+	batStr = "CLS\r"
+	batStr += "call \"" + scriptFolder + "\activate.bat\"\r"
+	batStr += "python denoise.py\r"
+	batStr += "CLS"
+	
+	//Path was created in exportWaves function
+	Open/Z/P=folderPath refnum as "denoiseScript.bat"
+	
+	If(V_flag > 0)
+		errStr = "Couldn't open the file: " + scriptFolder + "\denoiseScript.bat"
+		return ""
+	Else
+		FBinWrite refnum,batStr
+		Close refnum
+	EndIf
+	
+	return scriptPath
 End
